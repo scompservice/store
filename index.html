@@ -730,12 +730,11 @@
                 phone: finalPhone,
                 images: finalImages,
                 description: document.getElementById('adDescription').value,
-                createdAt: Date.now() // Sıralama üçün yaradılma tarixi
+                createdAt: Date.now()
             };
 
             try {
                 if (editingId) {
-                    // Mövcud elanı yeniləyəndə köhnə createdAt qorunur, yenisi yazılmır
                     delete adData.createdAt; 
                     await updateDoc(doc(db, "ads", editingId), adData);
                     showToast("Elan uğurla yeniləndi!");
@@ -844,19 +843,22 @@
                 return matchesSearch && matchesCat;
             });
 
-            // Sabit qılınacaq (pinned) alt kateqoriyalar
-            const pinnedSubCategories = [
-                "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri",
-                "Noutbuklar və netbuklar -> Noutbuk korpusları"
-            ];
-
-            // Əsas "Hamısı" bölməsindəyiksə və ya hər hansı xüsusi sıralama seçilməyibsə, pinned elanları həmişə üstdə saxla
+            // Sıralama prioritetləri:
+            // 1. "Noutbuklar üçün ehtiyyat hissələri" ən üstdə (prioritet 2)
+            //.2. "Noutbuk korpusları" ondan dərhal sonra (prioritet 1)
+            //.3. Digər elanlar (prioritet 0)
             filtered.sort((a, b) => {
-                const aIsPinned = pinnedSubCategories.includes(a.subCategory) ? 1 : 0;
-                const bIsPinned = pinnedSubCategories.includes(b.subCategory) ? 1 : 0;
+                const getPriority = (sub) => {
+                    if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
+                    if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
+                    return 0;
+                };
 
-                if (aIsPinned !== bIsPinned) {
-                    return bIsPinned - aIsPinned; // Pinned olanlar həmişə yuxarıda (1 > 0)
+                const pA = getPriority(a.subCategory);
+                const pB = getPriority(b.subCategory);
+
+                if (pA !== pB) {
+                    return pB - pA; // Prioriteti yüksək olan yuxarıda gəlir
                 }
 
                 // Digər sıralama şərtləri
@@ -1026,7 +1028,6 @@
                     ` : ''}
                 </div>
             `;
-            document.getElementById('detailModel') && document.getElementById('detailModal').classList.remove('hidden');
             document.getElementById('detailModal').classList.remove('hidden');
         };
 
