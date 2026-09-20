@@ -43,6 +43,8 @@
                     <div class="flex items-center space-x-2 text-[11px] text-slate-500 font-medium flex-wrap">
                         <span><i class="fa-solid fa-location-dot text-rose-500"></i> Sumqayıt</span>
                         <span>•</span>
+                        <span><i class="fa-solid fa-rectangle-ad text-primary"></i> Elan: <strong id="totalAdsCount" class="text-slate-700">0</strong></span>
+                        <span>•</span>
                         <span><i class="fa-solid fa-users text-emerald-500"></i> Aktiv: <strong id="activeUsersCount" class="text-slate-700">1</strong></span>
                         <span>•</span>
                         <span><i class="fa-solid fa-eye text-blue-500"></i> Baxış: <strong id="totalViewsCount" class="text-slate-700">0</strong></span>
@@ -146,8 +148,8 @@
         </div>
     </footer>
 
-    <!-- ADD/EDIT AD MODAL -->
-    <div id="addModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeAddModal()">
+    <!-- ADD/EDIT AD MODAL (Fonə toxunanda bağlanması ləğv edildi) -->
+    <div id="addModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni Elan Yerləşdir (Admin)</h3>
@@ -629,6 +631,9 @@
                     ads.push({ id: docSnap.id, views: 0, ...data, phone: formattedPhone, images: imgList });
                 });
                 
+                // Ümumi elan sayını yenilə
+                document.getElementById('totalAdsCount').innerText = ads.length;
+
                 const currentMainCat = document.getElementById('mainCategorySelect').value;
                 updateSubCategoryDropdown(currentMainCat, true);
 
@@ -637,7 +642,6 @@
             });
         }
 
-        // --- GÜNCƏLLƏŞDİRİLMİŞ SIKLAŞDIRMA (1 MB LİMİTİNİ AŞMAMaq ÜÇÜN 800x800 və 0.7 KEYFİYYƏT) ---
         function resizeAndConvertImage(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
