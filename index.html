@@ -631,7 +631,6 @@
                     ads.push({ id: docSnap.id, views: 0, ...data, phone: formattedPhone, images: imgList });
                 });
                 
-                // Ümumi elan sayını yenilə
                 document.getElementById('totalAdsCount').innerText = ads.length;
 
                 const currentMainCat = document.getElementById('mainCategorySelect').value;
@@ -802,9 +801,9 @@
             container.style.display = 'block';
             currentEditingImages.forEach((imgSrc, index) => {
                 const div = document.createElement('div');
-                div.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 group cursor-pointer flex-shrink-0";
+                div.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 group cursor-pointer flex-shrink-0 bg-slate-100";
                 div.innerHTML = `
-                    <img src="${imgSrc}" class="w-full h-full object-cover">
+                    <img src="${imgSrc}" class="w-full h-full object-contain">
                     <div class="absolute inset-0 bg-red-600/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition" title="Bu şəkli sil">
                         <i class="fa-solid fa-trash"></i>
                     </div>
@@ -868,8 +867,8 @@
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between";
                 card.innerHTML = `
-                    <div class="relative h-48 cursor-pointer" onclick="openDetail('${ad.id}')">
-                        <img src="${mainImg}" class="w-full h-full object-cover">
+                    <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
+                        <img src="${mainImg}" class="w-full h-full object-contain">
                         ${ad.images && ad.images.length > 1 ? `<span class="absolute top-3 left-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ${ad.images.length}</span>` : ''}
                         <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
                             <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
@@ -932,13 +931,15 @@
                 const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
                 imagesHTML = `
                     <div class="mb-6">
-                        <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200">
-                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="w-full h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
+                        <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
+                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-contain cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
                         </div>
                         ${ad.images.length > 1 ? `
                             <div class="flex gap-2 overflow-x-auto pb-2">
                                 ${ad.images.map((img, idx) => `
-                                    <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="w-20 h-20 object-cover rounded-xl border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
+                                        <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-contain">
+                                    </div>
                                 `).join('')}
                             </div>
                         ` : ''}
@@ -1088,7 +1089,9 @@
                 item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200";
                 item.innerHTML = `
                     <div class="flex items-center space-x-3 cursor-pointer" onclick="closeFavoritesModal(); openDetail('${ad.id}')">
-                        <img src="${mainImg}" class="w-16 h-16 object-cover rounded-lg">
+                        <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                            <img src="${mainImg}" class="max-w-full max-h-full object-contain">
+                        </div>
                         <div>
                             <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${ad.title}</h4>
                             <span class="text-xs font-bold text-slate-700">${ad.price.toLocaleString()} AZN</span>
