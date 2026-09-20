@@ -161,11 +161,19 @@
                     <input type="text" id="adTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="Məs: Qol saatı və ya Noutbuk">
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Kateqoriya və Alt Kateqoriya</label>
-                    <select id="adSubCategory" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary">
-                        <option value="">Kateqoriya seçin...</option>
-                    </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Kateqoriya</label>
+                        <select id="modalMainCategory" required onchange="onModalMainCategoryChange()" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                            <option value="">Kateqoriya seçin...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Alt Kateqoriya</label>
+                        <select id="modalSubCategory" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                            <option value="">Əvvəl kateqoriya seçin...</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -409,21 +417,36 @@
                 mainSelect.appendChild(mainOpt);
 
                 tabsContainer.innerHTML += `
-                    <button onclick="setCategoryTab('${catName}')" class="cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+                    <button onclick="setCategoryTab('${catName}')" class="cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2" data-cat="${catName}">
                         <i class="fa-solid ${details.icon}"></i> ${catName}
                     </button>
                 `;
             }
 
             updateSubCategoryDropdown('');
-            updateModalSubCategoryDropdown();
+            initModalMainCategoryDropdown();
         }
 
         window.onMainCategoryChange = function() {
             const mainCat = document.getElementById('mainCategorySelect').value;
-            updateSubCategoryDropdown(mainCat);
+            currentCategoryTab = mainCat;
+            updateSubCategoryDropdown(mainCat, false);
+            updateActiveTabUI(mainCat);
             filterAds();
         };
+
+        function updateActiveTabUI(catName) {
+            document.querySelectorAll('.cat-tab').forEach(btn => {
+                const btnCat = btn.getAttribute('data-cat') || '';
+                if (btnCat === catName) {
+                    btn.className = "cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25 flex items-center gap-2";
+                } else if (!catName && !btnCat) {
+                    btn.className = "cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25";
+                } else {
+                    btn.className = "cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2";
+                }
+            });
+        }
 
         function updateSubCategoryDropdown(selectedMainCat, keepSubCatSelection = false) {
             const subSelect = document.getElementById('subCategorySelect');
@@ -460,30 +483,44 @@
             }
         }
 
-        function updateModalSubCategoryDropdown() {
-            const modalSubSelect = document.getElementById('adSubCategory');
-            modalSubSelect.innerHTML = '<option value="">Kateqoriya seçin...</option>';
+        function initModalMainCategoryDropdown() {
+            const modalMainSelect = document.getElementById('modalMainCategory');
+            modalMainSelect.innerHTML = '<option value="">Kateqoriya seçin...</option>';
 
-            for (const [catName, details] of Object.entries(categoriesData)) {
-                for (const [subGroup, items] of Object.entries(details.sub)) {
-                    let groupOpt = document.createElement('option');
-                    groupOpt.disabled = true;
-                    groupOpt.style.fontWeight = "bold";
-                    groupOpt.style.color = "#0f172a";
-                    groupOpt.style.backgroundColor = "#f1f5f9";
-                    groupOpt.text = subGroup;
-                    modalSubSelect.appendChild(groupOpt);
-
-                    items.forEach(item => {
-                        const valueName = `${subGroup} -> ${item}`;
-                        let opt = document.createElement('option');
-                        opt.value = valueName;
-                        opt.text = `◇  ${item}`;
-                        modalSubSelect.appendChild(opt);
-                    });
-                }
+            for (const catName of Object.keys(categoriesData)) {
+                let opt = document.createElement('option');
+                opt.value = catName;
+                opt.text = catName;
+                modalMainSelect.appendChild(opt);
             }
         }
+
+        window.onModalMainCategoryChange = function() {
+            const selectedMain = document.getElementById('modalMainCategory').value;
+            const modalSubSelect = document.getElementById('modalSubCategory');
+            
+            modalSubSelect.innerHTML = '<option value="">Alt kateqoriya seçin...</option>';
+            if (!selectedMain || !categoriesData[selectedMain]) return;
+
+            const details = categoriesData[selectedMain];
+            for (const [subGroup, items] of Object.entries(details.sub)) {
+                let groupOpt = document.createElement('option');
+                groupOpt.disabled = true;
+                groupOpt.style.fontWeight = "bold";
+                groupOpt.style.color = "#0f172a";
+                groupOpt.style.backgroundColor = "#f1f5f9";
+                groupOpt.text = subGroup;
+                modalSubSelect.appendChild(groupOpt);
+
+                items.forEach(item => {
+                    const valueName = `${subGroup} -> ${item}`;
+                    let opt = document.createElement('option');
+                    opt.value = valueName;
+                    opt.text = `◇  ${item}`;
+                    modalSubSelect.appendChild(opt);
+                });
+            }
+        };
 
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
@@ -622,7 +659,7 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.50));
+                        resolve(canvas.toDataURL('image/jpeg', 0.5));
                     };
                     img.src = e.target.result;
                 };
@@ -643,16 +680,6 @@
             }
         };
 
-        function getCategoryFromSubCategory(subCatValue) {
-            if (!subCatValue) return "Elektronika";
-            for (const [catName, details] of Object.entries(categoriesData)) {
-                for (const subGroup of Object.keys(details.sub)) {
-                    if (subCatValue.startsWith(subGroup + " ->")) return catName;
-                }
-            }
-            return "Elektronika";
-        }
-
         window.submitAd = async function(e) {
             e.preventDefault();
             if (!currentUser) {
@@ -671,8 +698,8 @@
                 finalImages = ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
             }
 
-            const subCategoryVal = document.getElementById('adSubCategory').value;
-            const mainCategoryVal = getCategoryFromSubCategory(subCategoryVal);
+            const mainCategoryVal = document.getElementById('modalMainCategory').value;
+            const subCategoryVal = document.getElementById('modalSubCategory').value;
             const rawPhoneInput = document.getElementById('adPhone').value;
             const finalPhone = cleanAndFormatPhone(rawPhoneInput);
 
@@ -725,7 +752,11 @@
 
             document.getElementById('editingAdId').value = ad.id;
             document.getElementById('adTitle').value = ad.title;
-            document.getElementById('adSubCategory').value = ad.subCategory || "";
+            
+            document.getElementById('modalMainCategory').value = ad.category || "";
+            onModalMainCategoryChange();
+            document.getElementById('modalSubCategory').value = ad.subCategory || "";
+
             document.getElementById('adPrice').value = ad.price;
             document.getElementById('adPhone').value = ad.phone || "+994 50 545 85 86";
             document.getElementById('adDescription').value = ad.description;
@@ -856,11 +887,7 @@
             currentCategoryTab = cat;
             document.getElementById('mainCategorySelect').value = cat;
             updateSubCategoryDropdown(cat, false);
-            
-            document.querySelectorAll('.cat-tab').forEach(btn => {
-                btn.className = "cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2";
-            });
-            event.currentTarget.className = "cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25 flex items-center gap-2";
+            updateActiveTabUI(cat);
             filterAds();
         };
 
@@ -987,6 +1014,7 @@
         window.openAddModal = () => {
             if(!document.getElementById('editingAdId').value) {
                 document.getElementById('addAdForm').reset();
+                document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
                 document.getElementById('adPhone').value = "+994 50 545 85 86";
                 document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
                 currentEditingImages = [];
@@ -1053,19 +1081,12 @@
         }
 
         window.resetFilters = function() {
-            document.getElementById('searchInput').value.toLocaleLowerCase ? document.getElementById('searchInput').value = '' : '';
+            document.getElementById('searchInput').value = '';
             document.getElementById('mainCategorySelect').value = '';
             updateSubCategoryDropdown('', false);
             document.getElementById('sortSelect').value = 'newest';
             currentCategoryTab = '';
-            
-            const firstTab = document.querySelector('.cat-tab');
-            if(firstTab) {
-                document.querySelectorAll('.cat-tab').forEach(btn => {
-                    btn.className = "cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2";
-                });
-                firstTab.className = "cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25 flex items-center gap-2";
-            }
+            updateActiveTabUI('');
             filterAds();
         };
 
