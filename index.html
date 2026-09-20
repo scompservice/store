@@ -313,7 +313,7 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
-        let currentEditingImages = []; // Burada artıq fayl obyektləri və ya mövcud Storage URL-ləri saxlanılacaq
+        let currentEditingImages = [];
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
@@ -605,7 +605,7 @@
         window.handleNewFiles = function(input) {
             if (input.files && input.files.length > 0) {
                 for (let i = 0; i < input.files.length; i++) {
-                    currentEditingImages.push(input.files[i]); // Fayl obyektini birbaşa yığılır
+                    currentEditingImages.push(input.files[i]);
                 }
                 renderEditingThumbnails();
                 input.value = ''; 
@@ -638,11 +638,9 @@
 
                 for (let item of currentEditingImages) {
                     if (typeof item === 'string') {
-                        // Əgər artıq Storage URL-idirsə (redaktə zamanı qalan şəkillər)
                         finalImages.push(item);
                     } else {
-                        // Yeni seçilmiş fayldırsa, Firebase Storage-a yükləyirik
-                        const fileName = `images/${Date.now()}_${Math.random().toString(36.substring(2, 9))}_${item.name}`;
+                        const fileName = `images/${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${item.name}`;
                         const storageRef = ref(storage, fileName);
                         await uploadBytes(storageRef, item);
                         const downloadURL = await getDownloadURL(storageRef);
