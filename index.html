@@ -240,6 +240,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCwqM_2qvOX99DNTu9nAClaT9KVSSOl0h0",
@@ -254,6 +255,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
 
         const categoriesData = {
@@ -311,7 +313,7 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
-        let currentEditingImages = []; 
+        let currentEditingImages = []; // Burada artıq fayl obyektləri və ya mövcud Storage URL-ləri saxlanılacaq
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
@@ -600,43 +602,10 @@
             });
         }
 
-        function resizeImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
-                        const MAX_HEIGHT = 800;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height) {
-                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                        } else {
-                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        window.handleNewFiles = async function(input) {
+        window.handleNewFiles = function(input) {
             if (input.files && input.files.length > 0) {
                 for (let i = 0; i < input.files.length; i++) {
-                    try {
-                        const compressedBase64 = await resizeImage(input.files[i]);
-                        currentEditingImages.push(compressedBase64);
-                    } catch(err) { console.error(err); }
+                    currentEditingImages.push(input.files[i]); // Fayl obyektini birbaşa yığılır
                 }
                 renderEditingThumbnails();
                 input.value = ''; 
@@ -662,31 +631,47 @@
 
             const submitBtn = document.getElementById('submitAdBtn');
             submitBtn.disabled = true;
-            submitBtn.innerText = "Yüklənir...";
-
-            const editingId = document.getElementById('editingAdId').value;
-            let finalImages = [...currentEditingImages];
-            
-            if (finalImages.length === 0) {
-                finalImages = ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
-            }
-
-            const subCategoryVal = document.getElementById('adSubCategory').value;
-            const mainCategoryVal = getCategoryFromSubCategory(subCategoryVal);
-            const rawPhoneInput = document.getElementById('adPhone').value;
-            const finalPhone = cleanAndFormatPhone(rawPhoneInput);
-
-            const adData = {
-                title: document.getElementById('adTitle').value,
-                category: mainCategoryVal,
-                subCategory: subCategoryVal,
-                price: Number(document.getElementById('adPrice').value),
-                phone: finalPhone,
-                images: finalImages,
-                description: document.getElementById('adDescription').value,
-            };
+            submitBtn.innerText = "Şəkillər yüklənir...";
 
             try {
+                let finalImages = [];
+
+                for (let item of currentEditingImages) {
+                    if (typeof item === 'string') {
+                        // Əgər artıq Storage URL-idirsə (redaktə zamanı qalan şəkillər)
+                        finalImages.push(item);
+                    } else {
+                        // Yeni seçilmiş fayldırsa, Firebase Storage-a yükləyirik
+                        const fileName = `images/${Date.now()}_${Math.random().toString(36.substring(2, 9))}_${item.name}`;
+                        const storageRef = ref(storage, fileName);
+                        await uploadBytes(storageRef, item);
+                        const downloadURL = await getDownloadURL(storageRef);
+                        finalImages.push(downloadURL);
+                    }
+                }
+
+                if (finalImages.length === 0) {
+                    finalImages = ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
+                }
+
+                submitBtn.innerText = "Yadda saxlanılır...";
+
+                const editingId = document.getElementById('editingAdId').value;
+                const subCategoryVal = document.getElementById('adSubCategory').value;
+                const mainCategoryVal = getCategoryFromSubCategory(subCategoryVal);
+                const rawPhoneInput = document.getElementById('adPhone').value;
+                const finalPhone = cleanAndFormatPhone(rawPhoneInput);
+
+                const adData = {
+                    title: document.getElementById('adTitle').value,
+                    category: mainCategoryVal,
+                    subCategory: subCategoryVal,
+                    price: Number(document.getElementById('adPrice').value),
+                    phone: finalPhone,
+                    images: finalImages,
+                    description: document.getElementById('adDescription').value,
+                };
+
                 if (editingId) {
                     await updateDoc(doc(db, "ads", editingId), adData);
                     showToast("Elan uğurla yeniləndi!");
@@ -749,7 +734,9 @@
             }
 
             container.style.display = 'block';
-            currentEditingImages.forEach((imgSrc, index) => {
+            currentEditingImages.forEach((imgItem, index) => {
+                let imgSrc = typeof imgItem === 'string' ? imgItem : URL.createObjectURL(imgItem);
+
                 const div = document.createElement('div');
                 div.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 group cursor-pointer flex-shrink-0";
                 div.innerHTML = `
@@ -904,7 +891,6 @@
                 ${imagesHTML}
                 <div class="flex justify-between items-start mb-4">
                     <div class="w-full pr-2">
-                        <!-- Alt kateqoriya orijinal başlıq formatında və tək sətirdə -->
                         <div style="font-size: 11px;" class="font-bold text-primary tracking-wide truncate mb-1">
                             ${ad.category}${ad.subCategory ? ` / ${ad.subCategory.replace(' -> ', ' / ')}` : ''}
                         </div>
