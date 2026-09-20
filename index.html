@@ -651,8 +651,8 @@
                         let width = img.width;
                         let height = img.height;
                         
-                        const MAX_WIDTH = 800;
-                        const MAX_HEIGHT = 800;
+                        const MAX_WIDTH = 900;
+                        const MAX_HEIGHT = 900;
                         if (width > height) {
                             if (width > MAX_WIDTH) {
                                 height *= MAX_WIDTH / width;
@@ -670,7 +670,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
                         resolve(dataUrl);
                     };
                     img.onerror = reject;
@@ -843,36 +843,34 @@
                 return matchesSearch && matchesCat;
             });
 
-            // Sıralama prioritetləri:
-            // 1. "Noutbuklar üçün ehtiyyat hissələri" ən üstdə (prioritet 2)
-            //.2. "Noutbuk korpusları" ondan dərhal sonra (prioritet 1)
-            //.3. Digər elanlar (prioritet 0)
+            const isAllCategoryState = !selectedMainCat && !selectedSubCat && !currentCategoryTab && !search && sort === 'newest';
+
             filtered.sort((a, b) => {
-                const getPriority = (sub) => {
-                    if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
-                    if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
-                    return 0;
-                };
+                if (isAllCategoryState) {
+                    const getPriority = (sub) => {
+                        if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
+                        if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
+                        return 0;
+                    };
 
-                const pA = getPriority(a.subCategory);
-                const pB = getPriority(b.subCategory);
+                    const pA = getPriority(a.subCategory);
+                    const pB = getPriority(b.subCategory);
 
-                if (pA !== pB) {
-                    return pB - pA; // Prioriteti yüksək olan yuxarıda gəlir
+                    if (pA !== pB) {
+                        return pB - pA; 
+                    }
                 }
 
-                // Digər sıralama şərtləri
                 if (sort === 'price-asc') return a.price - b.price;
                 if (sort === 'price-desc') return b.price - a.price;
                 
-                // Default olaraq ən yenilər yuxarıda
                 return (b.createdAt || 0) - (a.createdAt || 0);
             });
 
-            renderAds(filtered);
+            renderAds(filtered, isAllCategoryState);
         };
 
-        function renderAds(list) {
+        function renderAds(list, isAllCategoryState) {
             const grid = document.getElementById('listingsGrid');
             const empty = document.getElementById('emptyState');
             grid.innerHTML = '';
@@ -894,7 +892,7 @@
                 const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
                 const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
                 
-                const isPinned = pinnedSubCategories.includes(ad.subCategory);
+                const isPinned = isAllCategoryState && pinnedSubCategories.includes(ad.subCategory);
 
                 const card = document.createElement('div');
                 card.className = `bg-white rounded-2xl border ${isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200'} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
@@ -940,6 +938,12 @@
             document.getElementById('mainCategorySelect').value = cat;
             updateSubCategoryDropdown(cat, false);
             updateActiveTabUI(cat);
+            
+            // "Hamısı" seçildikdə sıralamanı avtomatik "Ən yenilər"ə qaytarırıq ki, pinned işləsin
+            if (cat === '') {
+                document.getElementById('sortSelect').value = 'newest';
+            }
+            
             filterAds();
         };
 
