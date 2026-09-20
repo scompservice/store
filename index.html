@@ -600,7 +600,7 @@
             });
         }
 
-        // Çoxlu və böyük sayda şəkillərin 1 MB limitini keçməməsi üçün sıxlaşdırma tənzimləndi
+        // Şəkil keyfiyyəti 0.75 olaraq tənzimləndi (daha aydın və optimal)
         function resizeImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -623,8 +623,7 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        // Keyfiyyət 0.4 olaraq tənzimləndi ki, 30-40 şəkil belə rahatlıqla 1MB-a sığışsın
-                        resolve(canvas.toDataURL('image/jpeg', 0.4));
+                        resolve(canvas.toDataURL('image/jpeg', 0.75));
                     };
                     img.src = e.target.result;
                 };
@@ -906,7 +905,6 @@
                 ${imagesHTML}
                 <div class="flex justify-between items-start mb-4">
                     <div class="w-full pr-2">
-                        <!-- Alt kateqoriya orijinal başlıq formatında və tək sətirdə -->
                         <div style="font-size: 11px;" class="font-bold text-primary tracking-wide truncate mb-1">
                             ${ad.category}${ad.subCategory ? ` / ${ad.subCategory.replace(' -> ', ' / ')}` : ''}
                         </div>
