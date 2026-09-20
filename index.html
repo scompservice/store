@@ -127,8 +127,8 @@
         <!-- Category Tabs -->
         <div id="categoryTabsContainer" class="flex space-x-2 overflow-x-auto pb-4 mb-6 no-scrollbar"></div>
 
-        <!-- Listings Container (Grouped or Grid) -->
-        <div id="listingsContainer"></div>
+        <!-- Listings Grid -->
+        <div id="listingsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
 
         <!-- Empty state -->
         <div id="emptyState" class="hidden text-center py-16">
@@ -187,13 +187,6 @@
                         <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Əlaqə Nömrəsi</label>
                         <input type="text" id="adPhone" value="+994 50 545 85 86" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="+994 50 545 85 86" oninput="formatPhoneInput(this)">
                     </div>
-                </div>
-
-                <div class="flex items-center space-x-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                    <input type="checkbox" id="adIsPinned" class="w-5 h-5 text-primary accent-primary rounded cursor-pointer">
-                    <label for="adIsPinned" class="text-sm font-semibold text-slate-700 cursor-pointer flex items-center gap-1.5">
-                        <i class="fa-solid fa-thumbtack text-primary"></i> Bu elanı xüsusi (Pinned) et
-                    </label>
                 </div>
 
                 <div>
@@ -728,7 +721,6 @@
             const subCategoryVal = document.getElementById('modalSubCategory').value;
             const rawPhoneInput = document.getElementById('adPhone').value;
             const finalPhone = cleanAndFormatPhone(rawPhoneInput);
-            const isPinnedVal = document.getElementById('adIsPinned').checked;
 
             const adData = {
                 title: document.getElementById('adTitle').value,
@@ -738,7 +730,6 @@
                 phone: finalPhone,
                 images: finalImages,
                 description: document.getElementById('adDescription').value,
-                isPinned: isPinnedVal,
                 createdAt: Date.now()
             };
 
@@ -790,7 +781,6 @@
             document.getElementById('adPrice').value = ad.price;
             document.getElementById('adPhone').value = ad.phone || "+994 50 545 85 86";
             document.getElementById('adDescription').value = ad.description;
-            document.getElementById('adIsPinned').checked = !!ad.isPinned;
             document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
 
             currentEditingImages = [...(ad.images || [])];
@@ -853,10 +843,22 @@
                 return matchesSearch && matchesCat;
             });
 
+            const isAllCategoryState = !selectedMainCat && !selectedSubCat && !currentCategoryTab && !search && sort === 'newest';
+
             filtered.sort((a, b) => {
-                // Əvvəlcə pinned olanlar həmişə yuxarıda çıxsın
-                if (Boolean(b.isPinned) !== Boolean(a.isPinned)) {
-                    return (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0);
+                if (isAllCategoryState) {
+                    const getPriority = (sub) => {
+                        if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
+                        if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
+                        return 0;
+                    };
+
+                    const pA = getPriority(a.subCategory);
+                    const pB = getPriority(b.subCategory);
+
+                    if (pA !== pB) {
+                        return pB - pA; 
+                    }
                 }
 
                 if (sort === 'price-asc') return a.price - b.price;
@@ -865,14 +867,13 @@
                 return (b.createdAt || 0) - (a.createdAt || 0);
             });
 
-            const isGroupedView = !selectedMainCat && !selectedSubCat && !currentCategoryTab && !search;
-            renderListings(filtered, isGroupedView);
+            renderAds(filtered, isAllCategoryState);
         };
 
-        function renderListings(list, isGroupedView) {
-            const container = document.getElementById('listingsContainer');
+        function renderAds(list, isAllCategoryState) {
+            const grid = document.getElementById('listingsGrid');
             const empty = document.getElementById('emptyState');
-            container.innerHTML = '';
+            grid.innerHTML = '';
 
             if (list.length === 0) {
                 empty.classList.remove('hidden');
@@ -880,93 +881,56 @@
             }
             empty.classList.add('hidden');
 
-            if (isGroupedView) {
-                // Əvvəlki versiyadakı kimi alt kateqoriyalar üzrə qruplaşdırılmış görünüş
-                const grouped = {};
-                list.forEach(ad => {
-                    const subCatKey = ad.subCategory || "Digər";
-                    if (!grouped[subCatKey]) grouped[subCatKey] = [];
-                    grouped[subCatKey].push(ad);
-                });
+            const pinnedSubCategories = [
+                "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri",
+                "Noutbuklar və netbuklar -> Noutbuk korpusları"
+            ];
 
-                for (const [subCatName, subAds] of Object.entries(grouped)) {
-                    const section = document.createElement('div');
-                    section.className = "mb-10";
-                    
-                    const headerHtml = `
-                        <div class="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
-                            <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                                <i class="fa-solid fa-folder-open text-primary"></i> ${subCatName.replace(' -> ', ' / ')}
-                                <span class="text-xs font-semibold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">${subAds.length}</span>
-                            </h3>
+            list.forEach(ad => {
+                const isFav = favorites.some(f => f.id === ad.id);
+                const displayPhone = ad.phone || "+994 50 545 85 86";
+                const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
+                const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
+                
+                const isPinned = isAllCategoryState && pinnedSubCategories.includes(ad.subCategory);
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-2xl border ${isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200'} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
+                card.innerHTML = `
+                    <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
+                        <img src="${mainImg}" class="w-full h-full object-contain">
+                        ${isPinned ? `<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>` : ''}
+                        ${ad.images && ad.images.length > 1 ? `<span class="absolute top-3 ${isPinned ? 'left-20' : 'left-3'} bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ${ad.images.length}</span>` : ''}
+                        <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
+                            <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
                         </div>
-                    `;
-
-                    const grid = document.createElement('div');
-                    grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
-
-                    subAds.forEach(ad => {
-                        grid.appendChild(createAdCardElement(ad));
-                    });
-
-                    section.innerHTML = headerHtml;
-                    section.appendChild(grid);
-                    container.appendChild(section);
-                }
-            } else {
-                // Adi grid görünüşü (axtarış və ya kateqoriya seçildikdə)
-                const grid = document.createElement('div');
-                grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
-                list.forEach(ad => {
-                    grid.appendChild(createAdCardElement(ad));
-                });
-                container.appendChild(grid);
-            }
-        }
-
-        function createAdCardElement(ad) {
-            const isFav = favorites.some(f => f.id === ad.id);
-            const displayPhone = ad.phone || "+994 50 545 85 86";
-            const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
-            const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
-            const isPinned = !!ad.isPinned;
-
-            const card = document.createElement('div');
-            card.className = `bg-white rounded-2xl border ${isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200'} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
-            card.innerHTML = `
-                <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
-                    <img src="${mainImg}" class="w-full h-full object-contain">
-                    ${isPinned ? `<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>` : ''}
-                    ${ad.images && ad.images.length > 1 ? `<span class="absolute top-3 ${isPinned ? 'left-20' : 'left-3'} bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ${ad.images.length}</span>` : ''}
-                    <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
-                        <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
+                        <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
+                            <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i>
+                        </button>
                     </div>
-                    <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
-                        <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i>
-                    </button>
-                </div>
-                <div class="p-5 flex-grow flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
-                            <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
-                            <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
+                    <div class="p-5 flex-grow flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
+                                <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
+                                <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
+                            </div>
+                            ${ad.subCategory ? `<div class="text-[11px] text-slate-500 font-medium mb-1">${ad.subCategory.replace(' -> ', ' / ')}</div>` : ''}
+                            <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
+                            <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
                         </div>
-                        ${ad.subCategory ? `<div class="text-[11px] text-slate-500 font-medium mb-1">${ad.subCategory.replace(' -> ', ' / ')}</div>` : ''}
-                        <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
-                        <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <span class="text-lg font-extrabold text-slate-900">${ad.price.toLocaleString()} AZN</span>
-                        <div class="flex items-center gap-2">
-                            <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Salam, ${ad.title} elanı ilə maraqlanıram, hələ satılmayıb?`)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
-                                <i class="fa-brands fa-whatsapp"></i>
-                            </a>
-                            <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
+                        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-lg font-extrabold text-slate-900">${ad.price.toLocaleString()} AZN</span>
+                            <div class="flex items-center gap-2">
+                                <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Salam, ${ad.title} elanı ilə maraqlanıram, hələ satılmayıb?`)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                </a>
+                                <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            return card;
+                `;
+                grid.appendChild(card);
+            });
         }
 
         window.setCategoryTab = function(cat) {
@@ -974,6 +938,12 @@
             document.getElementById('mainCategorySelect').value = cat;
             updateSubCategoryDropdown(cat, false);
             updateActiveTabUI(cat);
+            
+            // "Hamısı" seçildikdə sıralamanı avtomatik "Ən yenilər"ə qaytarırıq ki, pinned işləsin
+            if (cat === '') {
+                document.getElementById('sortSelect').value = 'newest';
+            }
+            
             filterAds();
         };
 
@@ -1104,7 +1074,6 @@
                 document.getElementById('addAdForm').reset();
                 document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
                 document.getElementById('adPhone').value = "+994 50 545 85 86";
-                document.getElementById('adIsPinned').checked = false;
                 document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
                 currentEditingImages = [];
                 renderEditingThumbnails();
@@ -1161,8 +1130,8 @@
                             <img src="${mainImg}" class="max-w-full max-h-full object-contain">
                         </div>
                         <div>
-                            <h4 class="font-bold text-sm text-slate-900 line-container line-clamp-1">${ad.title}</h4>
-                            <span class="text-xs font-bold text-slate-700">${ad.price.toLocaleString()} AZN</span>
+                            <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${ad.title}</h4>
+                            <span class="text-xs font-bold text-slate-700">${ad.price.price ? ad.price.price.toLocaleString() : ad.price.toLocaleString()} AZN</span>
                         </div>
                     </div>
                     <button onclick="toggleFavorite('${ad.id}'); renderFavorites();" class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash"></i></button>
