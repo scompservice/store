@@ -637,7 +637,7 @@
             });
         }
 
-        // --- ŞƏKLI OPTİMALLAŞDIRIB BASE64 FORMATINDA OXUMAQ (100% ETİBARLI) ---
+        // --- GÜNCƏLLƏŞDİRİLMİŞ SIKLAŞDIRMA (1 MB LİMİTİNİ AŞMAMaq ÜÇÜN 800x800 və 0.7 KEYFİYYƏT) ---
         function resizeAndConvertImage(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -648,8 +648,8 @@
                         let width = img.width;
                         let height = img.height;
                         
-                        const MAX_WIDTH = 1000;
-                        const MAX_HEIGHT = 1000;
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
                         if (width > height) {
                             if (width > MAX_WIDTH) {
                                 height *= MAX_WIDTH / width;
@@ -667,8 +667,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // JPEG formatında keyfiyyətli sıxlaşdırma (Firebase limitini aşmamaq üçün)
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         resolve(dataUrl);
                     };
                     img.onerror = reject;
