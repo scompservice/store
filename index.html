@@ -163,6 +163,14 @@
                     <input type="text" id="adTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="Məs: Qol saatı və ya Noutbuk">
                 </div>
 
+                <!-- VIP Checkbox -->
+                <div class="flex items-center space-x-2 bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                    <input type="checkbox" id="adIsVip" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 cursor-pointer">
+                    <label for="adIsVip" class="text-xs font-bold text-amber-900 cursor-pointer flex items-center gap-1.5">
+                        <i class="fa-solid fa-crown text-amber-500"></i> VIP Elan et (Ən yuxarıda göstərilsin)
+                    </label>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Kateqoriya</label>
@@ -721,6 +729,7 @@
             const subCategoryVal = document.getElementById('modalSubCategory').value;
             const rawPhoneInput = document.getElementById('adPhone').value;
             const finalPhone = cleanAndFormatPhone(rawPhoneInput);
+            const isVipChecked = document.getElementById('adIsVip').checked;
 
             const adData = {
                 title: document.getElementById('adTitle').value,
@@ -730,6 +739,7 @@
                 phone: finalPhone,
                 images: finalImages,
                 description: document.getElementById('adDescription').value,
+                isVip: isVipChecked,
                 createdAt: Date.now()
             };
 
@@ -773,6 +783,7 @@
 
             document.getElementById('editingAdId').value = ad.id;
             document.getElementById('adTitle').value = ad.title;
+            document.getElementById('adIsVip').checked = !!ad.isVip;
             
             document.getElementById('modalMainCategory').value = ad.category || "";
             onModalMainCategoryChange();
@@ -847,6 +858,9 @@
 
             filtered.sort((a, b) => {
                 if (isAllCategoryState) {
+                    if (a.isVip && !b.isVip) return -1;
+                    if (!a.isVip && b.isVip) return 1;
+
                     const getPriority = (sub) => {
                         if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
                         if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
@@ -893,14 +907,24 @@
                 const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
                 
                 const isPinned = isAllCategoryState && pinnedSubCategories.includes(ad.subCategory);
+                const isVip = ad.isVip;
 
                 const card = document.createElement('div');
-                card.className = `bg-white rounded-2xl border ${isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200'} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
+                card.className = `bg-white rounded-2xl border ${isVip ? 'border-amber-400 shadow-lg ring-2 ring-amber-400/20' : (isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200')} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
+                
+                let badgeHTML = '';
+                if (isVip) {
+                    badgeHTML += `<span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-crown"></i> VIP</span>`;
+                }
+                if (isPinned) {
+                    badgeHTML += `<span class="absolute top-3 ${isVip ? 'left-16' : 'left-3'} bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>`;
+                }
+
                 card.innerHTML = `
                     <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
                         <img src="${mainImg}" class="w-full h-full object-contain">
-                        ${isPinned ? `<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>` : ''}
-                        ${ad.images && ad.images.length > 1 ? `<span class="absolute top-3 ${isPinned ? 'left-20' : 'left-3'} bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ${ad.images.length}</span>` : ''}
+                        ${badgeHTML}
+                        ${ad.images && ad.images.length > 1 ? `<span class="absolute top-3 ${isVip \vert{}\vert{} isPinned ? 'left-28' : 'left-3'} bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ${ad.images.length}</span>` : ''}
                         <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
                             <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
                         </div>
@@ -939,7 +963,6 @@
             updateSubCategoryDropdown(cat, false);
             updateActiveTabUI(cat);
             
-            // "Hamısı" seçildikdə sıralamanı avtomatik "Ən yenilər"ə qaytarırıq ki, pinned işləsin
             if (cat === '') {
                 document.getElementById('sortSelect').value = 'newest';
             }
@@ -1075,6 +1098,7 @@
                 document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
                 document.getElementById('adPhone').value = "+994 50 545 85 86";
                 document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
+                document.getElementById('adIsVip').checked = false;
                 currentEditingImages = [];
                 renderEditingThumbnails();
             }
