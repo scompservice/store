@@ -127,19 +127,6 @@
         <!-- Category Tabs -->
         <div id="categoryTabsContainer" class="flex space-x-2 overflow-x-auto pb-4 mb-6 no-scrollbar"></div>
 
-        <!-- VIP Elanlar Bölməsi (Dinamik) -->
-        <div id="vipSection" class="hidden mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <div class="bg-amber-500 text-white w-8 h-8 rounded-xl flex items-center justify-center shadow-md shadow-amber-500/30">
-                        <i class="fa-solid fa-crown"></i>
-                    </div>
-                    <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">VIP elanlar</h2>
-                </div>
-            </div>
-            <div id="vipGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-        </div>
-
         <!-- Listings Grid -->
         <div id="listingsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
 
@@ -886,64 +873,9 @@
         function renderAds(list, isAllCategoryState) {
             const grid = document.getElementById('listingsGrid');
             const empty = document.getElementById('emptyState');
-            const vipSection = document.getElementById('vipSection');
-            const vipGrid = document.getElementById('vipGrid');
-            
             grid.innerHTML = '';
-            vipGrid.innerHTML = '';
 
-            let vipList = [];
-            if (isAllCategoryState) {
-                vipList = list.filter(ad => ad.isVip === true);
-            }
-
-            if (vipList.length > 0) {
-                vipSection.classList.remove('hidden');
-                vipList.forEach(ad => {
-                    const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
-                    const displayPhone = ad.phone || "+994 50 545 85 86";
-                    const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
-                    const isFav = favorites.some(f => f.id === ad.id);
-
-                    const card = document.createElement('div');
-                    card.className = "bg-white rounded-2xl border border-amber-300 shadow-md ring-1 ring-amber-500/20 overflow-hidden hover:shadow-lg transition flex flex-col justify-between";
-                    card.innerHTML = `
-                        <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
-                            <img src="${mainImg}" class="w-full h-full object-contain">
-                            <span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] px-2.5 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-crown"></i> VIP</span>
-                            <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
-                                <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i>
-                            </button>
-                        </div>
-                        <div class="p-5 flex-grow flex flex-col justify-between">
-                            <div>
-                                <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
-                                    <span class="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">${ad.category}</span>
-                                    <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
-                                </div>
-                                <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
-                                <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <span class="text-lg font-extrabold text-slate-900">${ad.price.toLocaleString()} AZN</span>
-                                <div class="flex items-center gap-2">
-                                    <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Salam, ${ad.title} elanı ilə maraqlanıram`)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition">
-                                        <i class="fa-brands fa-whatsapp"></i>
-                                    </a>
-                                    <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    vipGrid.appendChild(card);
-                });
-            } else {
-                vipSection.classList.add('hidden');
-            }
-
-            const regularList = list.filter(ad => !vipList.includes(ad));
-
-            if (regularList.length === 0 && vipList.length === 0) {
+            if (list.length === 0) {
                 empty.classList.remove('hidden');
                 return;
             }
@@ -954,7 +886,7 @@
                 "Noutbuklar və netbuklar -> Noutbuk korpusları"
             ];
 
-            regularList.forEach(ad => {
+            list.forEach(ad => {
                 const isFav = favorites.some(f => f.id === ad.id);
                 const displayPhone = ad.phone || "+994 50 545 85 86";
                 const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
@@ -1007,6 +939,7 @@
             updateSubCategoryDropdown(cat, false);
             updateActiveTabUI(cat);
             
+            // "Hamısı" seçildikdə sıralamanı avtomatik "Ən yenilər"ə qaytarırıq ki, pinned işləsin
             if (cat === '') {
                 document.getElementById('sortSelect').value = 'newest';
             }
@@ -1188,4 +1121,52 @@
                 return;
             }
             favorites.forEach(ad => {
-      
+                const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="closeFavoritesModal(); openDetail('${ad.id}')">
+                        <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                            <img src="${mainImg}" class="max-w-full max-h-full object-contain">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${ad.title}</h4>
+                            <span class="text-xs font-bold text-slate-700">${ad.price.price ? ad.price.price.toLocaleString() : ad.price.toLocaleString()} AZN</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleFavorite('${ad.id}'); renderFavorites();" class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        window.resetFilters = function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mainCategorySelect').value = '';
+            updateSubCategoryDropdown('', false);
+            document.getElementById('sortSelect').value = 'newest';
+            currentCategoryTab = '';
+            updateActiveTabUI('');
+            filterAds();
+        };
+
+        function checkUrlForAd() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const adId = urlParams.get('id');
+            if (adId) {
+                const timer = setInterval(() => {
+                    if (ads.length > 0) {
+                        clearInterval(timer);
+                        openDetail(adId);
+                    }
+                }, 200);
+            }
+        }
+
+        initCategorySelectors();
+        initStats();
+        listenToAds();
+        checkUrlForAd();
+    </script>
+</body>
+</html>
