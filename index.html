@@ -845,16 +845,8 @@
 
             const isAllCategoryState = !selectedMainCat && !selectedSubCat && !currentCategoryTab && !search && sort === 'newest';
 
-            // Yenilənmiş sıralama məntiqi (Prioritetlər: 1. isPinned olanlar, 2. Ehtiyyat hissələri, 3. Korpuslar)
             filtered.sort((a, b) => {
                 if (isAllCategoryState) {
-                    // Admin tərəfindən pinlənənlərə ən yüksək prioritet veririk (əgər elanda isPinned xüsusiyyəti varsa)
-                    const aPinned = !!a.isPinned;
-                    const bPinned = !!b.isPinned;
-                    if (aPinned !== bPinned) {
-                        return bPinned ? 1 : -1;
-                    }
-
                     const getPriority = (sub) => {
                         if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
                         if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
@@ -900,8 +892,7 @@
                 const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
                 const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
                 
-                // Əgər həqiqətən isPinned olubsa VƏ YA noutbuk hissələridirsə xüsusi işarə göstərilir
-                const isPinned = isAllCategoryState && (ad.isPinned || pinnedSubCategories.includes(ad.subCategory));
+                const isPinned = isAllCategoryState && pinnedSubCategories.includes(ad.subCategory);
 
                 const card = document.createElement('div');
                 card.className = `bg-white rounded-2xl border ${isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200'} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
@@ -948,6 +939,7 @@
             updateSubCategoryDropdown(cat, false);
             updateActiveTabUI(cat);
             
+            // "Hamısı" seçildikdə sıralamanı avtomatik "Ən yenilər"ə qaytarırıq ki, pinned işləsin
             if (cat === '') {
                 document.getElementById('sortSelect').value = 'newest';
             }
