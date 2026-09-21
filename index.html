@@ -376,7 +376,7 @@
             const siteUrl = window.location.origin + window.location.pathname;
             const shareText = "ElanSaytı - Ən son elanlar";
             
-            document.getElementById('shareWhatsapp').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' - ' + siteUrl)}`;
+            document.getElementById('shareWhatsapp').href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText + ' - ' + siteUrl);
         };
 
         window.copySiteLink = function() {
@@ -399,8 +399,8 @@
             const bgClass = type === 'success' ? 'bg-emerald-600' : 'bg-slate-900';
             const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
 
-            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm font-semibold pointer-events-auto transition transform translate-y-2 opacity-0 duration-300`;
-            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${message}</span>`;
+            toast.className = bgClass + " text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm font-semibold pointer-events-auto transition transform translate-y-2 opacity-0 duration-300";
+            toast.innerHTML = '<i class="fa-solid ' + icon + '"></i><span>' + message + '</span>';
             container.appendChild(toast);
 
             setTimeout(() => {
@@ -418,7 +418,7 @@
             const tabsContainer = document.getElementById('categoryTabsContainer');
 
             mainSelect.innerHTML = '<option value="">Kateqoriyalar</option>';
-            tabsContainer.innerHTML = `<button onclick="setCategoryTab('')" class="cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25">Hamısı</button>`;
+            tabsContainer.innerHTML = '<button onclick="setCategoryTab(\'\')" class="cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25">Hamısı</button>';
 
             for (const [catName, details] of Object.entries(categoriesData)) {
                 let mainOpt = document.createElement('option');
@@ -477,12 +477,12 @@
                     subSelect.appendChild(groupOpt);
 
                     items.forEach(item => {
-                        const valueName = `${subGroup} -> ${item}`;
+                        const valueName = subGroup + " -> " + item;
                         const count = ads.filter(ad => ad.subCategory === valueName).length;
 
                         let opt = document.createElement('option');
                         opt.value = valueName;
-                        opt.text = `◇  ${item} (${count})`;
+                        opt.text = "◇  " + item + " (" + count + ")";
                         subSelect.appendChild(opt);
                     });
                 }
@@ -523,10 +523,10 @@
                 modalSubSelect.appendChild(groupOpt);
 
                 items.forEach(item => {
-                    const valueName = `${subGroup} -> ${item}`;
+                    const valueName = subGroup + " -> " + item;
                     let opt = document.createElement('option');
                     opt.value = valueName;
-                    opt.text = `◇  ${item}`;
+                    opt.text = "◇  " + item;
                     modalSubSelect.appendChild(opt);
                 });
             }
@@ -815,12 +815,7 @@
             currentEditingImages.forEach((imgSrc, index) => {
                 const div = document.createElement('div');
                 div.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 group cursor-pointer flex-shrink-0 bg-slate-100";
-                div.innerHTML = `
-                    <img src="${imgSrc}" class="w-full h-full object-contain">
-                    <div class="absolute inset-0 bg-red-600/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition" title="Bu şəkli sil">
-                        <i class="fa-solid fa-trash"></i>
-                    </div>
-                `;
+                div.innerHTML = '<img src="' + imgSrc + '" class="w-full h-full object-contain"><div class="absolute inset-0 bg-red-600/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition" title="Bu şəkli sil"><i class="fa-solid fa-trash"></i></div>';
                 div.onclick = () => {
                     currentEditingImages.splice(index, 1);
                     renderEditingThumbnails();
@@ -910,21 +905,23 @@
                 const isVip = ad.isVip;
 
                 const card = document.createElement('div');
-                card.className = `bg-white rounded-2xl border ${isVip ? 'border-amber-400 shadow-lg ring-2 ring-amber-400/20' : (isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200')} overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between`;
+                card.className = "bg-white rounded-2xl border " + (isVip ? 'border-amber-400 shadow-lg ring-2 ring-amber-400/20' : (isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200')) + " overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between";
                 
                 let badgeHTML = '';
                 if (isVip) {
-                    badgeHTML += `<span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-crown"></i> VIP</span>`;
+                    badgeHTML += '<span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-crown"></i> VIP</span>';
                 }
                 if (isPinned) {
-                    badgeHTML += `<span class="absolute top-3 ${isVip ? 'left-16' : 'left-3'} bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>`;
+                    badgeHTML += '<span class="absolute top-3 ' + (isVip ? 'left-16' : 'left-3') + ' bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
                 }
+
+                const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
 
                 card.innerHTML = `
                     <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
                         <img src="${mainImg}" class="w-full h-full object-contain">
                         ${badgeHTML}
-                        ${ad.images && ad.images.length > 1 ? `<span class="absolute top-3 ${isVip \vert{}\vert{} isPinned ? 'left-28' : 'left-3'} bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ${ad.images.length}</span>` : ''}
+                        ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (isVip || isPinned ? 'left-28' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
                         <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
                             <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
                         </div>
@@ -938,14 +935,14 @@
                                 <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
                                 <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
                             </div>
-                            ${ad.subCategory ? `<div class="text-[11px] text-slate-500 font-medium mb-1">${ad.subCategory.replace(' -> ', ' / ')}</div>` : ''}
+                            ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
                             <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
                             <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
                         </div>
                         <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
                             <span class="text-lg font-extrabold text-slate-900">${ad.price.toLocaleString()} AZN</span>
                             <div class="flex items-center gap-2">
-                                <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Salam, ${ad.title} elanı ilə maraqlanıram, hələ satılmayıb?`)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
+                                <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsgText)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
                                     <i class="fa-brands fa-whatsapp"></i>
                                 </a>
                                 <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
@@ -982,30 +979,40 @@
 
             const displayPhone = ad.phone || "+994 50 545 85 86";
             const cleanPhone = displayPhone.replace(/[^0-9]/g, '');
-            const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Salam, ${ad.title} elanı ilə maraqlanıram, hələ satılmayıb?`)}`;
+            const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
+            const whatsappUrl = "https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(whatsappMsgText);
             
             const adSpecificUrl = window.location.origin + window.location.pathname + "?id=" + ad.id;
 
             let imagesHTML = '';
             if (ad.images && ad.images.length > 0) {
                 const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
+                
+                let thumbsHTML = '';
+                if (ad.images.length > 1) {
+                    thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
+                    for (let idx = 0; idx < ad.images.length; idx++) {
+                        const img = ad.images[idx];
+                        thumbsHTML += `
+                            <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
+                                <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-contain">
+                            </div>
+                        `;
+                    }
+                    thumbsHTML += '</div>';
+                }
+
                 imagesHTML = `
                     <div class="mb-6">
                         <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
                             <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-contain cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
                         </div>
-                        ${ad.images.length > 1 ? `
-                            <div class="flex gap-2 overflow-x-auto pb-2">
-                                ${ad.images.map((img, idx) => `
-                                    <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
-                                        <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-contain">
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
+                        ${thumbsHTML}
                     </div>
                 `;
             }
+
+            const categoryText = ad.category + (ad.subCategory ? ' / ' + ad.subCategory.replace(' -> ', ' / ') : '');
 
             const content = document.getElementById('detailContent');
             content.innerHTML = `
@@ -1013,7 +1020,7 @@
                 <div class="flex justify-between items-start mb-4">
                     <div class="w-full pr-2">
                         <div style="font-size: 11px;" class="font-bold text-primary tracking-wide truncate mb-1">
-                            ${ad.category}${ad.subCategory ? ` / ${ad.subCategory.replace(' -> ', ' / ')}` : ''}
+                            ${categoryText}
                         </div>
                         <h2 class="text-2xl font-bold text-slate-900 mt-1 leading-snug">${ad.title}</h2>
                         <div class="flex items-center gap-4 mt-2 flex-wrap">
@@ -1072,7 +1079,7 @@
             const counterEl = document.getElementById('imageCounter');
             if (activeFullscreenImages.length > 0) {
                 imgEl.src = activeFullscreenImages[currentFullscreenIndex];
-                counterEl.innerText = `${currentFullscreenIndex + 1} / ${activeFullscreenImages.length}`;
+                counterEl.innerText = (currentFullscreenIndex + 1) + " / " + activeFullscreenImages.length;
             }
         }
 
@@ -1141,11 +1148,12 @@
             const list = document.getElementById('favoritesList');
             list.innerHTML = '';
             if (favorites.length === 0) {
-                list.innerHTML = `<p class="text-center text-slate-500 py-8">Seçilmiş elan yoxdur.</p>`;
+                list.innerHTML = '<p class="text-center text-slate-500 py-8">Seçilmiş elan yoxdur.</p>';
                 return;
             }
             favorites.forEach(ad => {
                 const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
+                const priceVal = ad.price && typeof ad.price === 'object' && ad.price.price ? ad.price.price.toLocaleString() : Number(ad.price || 0).toLocaleString();
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200";
                 item.innerHTML = `
@@ -1155,7 +1163,7 @@
                         </div>
                         <div>
                             <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${ad.title}</h4>
-                            <span class="text-xs font-bold text-slate-700">${ad.price.price ? ad.price.price.toLocaleString() : ad.price.toLocaleString()} AZN</span>
+                            <span class="text-xs font-bold text-slate-700">${priceVal} AZN</span>
                         </div>
                     </div>
                     <button onclick="toggleFavorite('${ad.id}'); renderFavorites();" class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash"></i></button>
