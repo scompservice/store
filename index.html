@@ -152,7 +152,7 @@
     <div id="addModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni Elan Yerləşdir (Admin)</h3>
+                <h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni İşlənmiş Elan Yerləşdir (Admin)</h3>
                 <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
@@ -161,6 +161,15 @@
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Elanın Başlığı</label>
                     <input type="text" id="adTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="Məs: Qol saatı və ya Noutbuk">
+                </div>
+
+                <!-- Yeni / İşlənmiş Seçimi -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Vəziyyəti</label>
+                    <select id="adCondition" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                        <option value="Yeni">Yeni</option>
+                        <option value="İşlənmiş">İşlənmiş</option>
+                    </select>
                 </div>
 
                 <!-- VIP Checkbox -->
@@ -541,7 +550,7 @@
                 addAdBtnContainer.innerHTML = `
                     <button onclick="openAddModal()" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg shadow-primary/30 flex items-center space-x-2 transition transform active:scale-95 text-sm">
                         <i class="fa-solid fa-plus"></i>
-                        <span>Elan Yerləşdir</span>
+                        <span>Yeni İşlənmiş</span>
                     </button>
                 `;
                 authSection.innerHTML = `
@@ -730,9 +739,11 @@
             const rawPhoneInput = document.getElementById('adPhone').value;
             const finalPhone = cleanAndFormatPhone(rawPhoneInput);
             const isVipChecked = document.getElementById('adIsVip').checked;
+            const adConditionVal = document.getElementById('adCondition').value;
 
             const adData = {
                 title: document.getElementById('adTitle').value,
+                condition: adConditionVal,
                 category: mainCategoryVal,
                 subCategory: subCategoryVal,
                 price: Number(document.getElementById('adPrice').value),
@@ -783,6 +794,7 @@
 
             document.getElementById('editingAdId').value = ad.id;
             document.getElementById('adTitle').value = ad.title;
+            document.getElementById('adCondition').value = ad.condition || "Yeni";
             document.getElementById('adIsVip').checked = !!ad.isVip;
             
             document.getElementById('modalMainCategory').value = ad.category || "";
@@ -903,6 +915,7 @@
                 
                 const isPinned = isAllCategoryState && pinnedSubCategories.includes(ad.subCategory);
                 const isVip = ad.isVip;
+                const condition = ad.condition || "Yeni";
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl border " + (isVip ? 'border-amber-400 shadow-lg ring-2 ring-amber-400/20' : (isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200')) + " overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between";
@@ -933,7 +946,7 @@
                         <div>
                             <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
                                 <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
-                                <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">${condition}</span>
                             </div>
                             ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
                             <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
@@ -983,6 +996,7 @@
             const whatsappUrl = "https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(whatsappMsgText);
             
             const adSpecificUrl = window.location.origin + window.location.pathname + "?id=" + ad.id;
+            const condition = ad.condition || "Yeni";
 
             let imagesHTML = '';
             if (ad.images && ad.images.length > 0) {
@@ -1019,8 +1033,11 @@
                 ${imagesHTML}
                 <div class="flex justify-between items-start mb-4">
                     <div class="w-full pr-2">
-                        <div style="font-size: 11px;" class="font-bold text-primary tracking-wide truncate mb-1">
-                            ${categoryText}
+                        <div class="flex items-center gap-2 mb-1">
+                            <span style="font-size: 11px;" class="font-bold text-primary tracking-wide truncate">
+                                ${categoryText}
+                            </span>
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">${condition}</span>
                         </div>
                         <h2 class="text-2xl font-bold text-slate-900 mt-1 leading-snug">${ad.title}</h2>
                         <div class="flex items-center gap-4 mt-2 flex-wrap">
@@ -1104,8 +1121,9 @@
                 document.getElementById('addAdForm').reset();
                 document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
                 document.getElementById('adPhone').value = "+994 50 545 85 86";
-                document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
+                document.getElementById('modalTitleText').innerText = "Yeni İşlənmiş Elan Yerləşdir (Admin)";
                 document.getElementById('adIsVip').checked = false;
+                document.getElementById('adCondition').value = "Yeni";
                 currentEditingImages = [];
                 renderEditingThumbnails();
             }
@@ -1184,21 +1202,4 @@
 
         function checkUrlForAd() {
             const urlParams = new URLSearchParams(window.location.search);
-            const adId = urlParams.get('id');
-            if (adId) {
-                const timer = setInterval(() => {
-                    if (ads.length > 0) {
-                        clearInterval(timer);
-                        openDetail(adId);
-                    }
-                }, 200);
-            }
-        }
-
-        initCategorySelectors();
-        initStats();
-        listenToAds();
-        checkUrlForAd();
-    </script>
-</body>
-</html>
+         
