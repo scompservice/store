@@ -152,7 +152,7 @@
     <div id="addModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni İşlənmiş Elan Yerləşdir (Admin)</h3>
+                <h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni İşlənmiş Elan Yerləşdir</h3>
                 <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
@@ -804,7 +804,7 @@
             document.getElementById('adPrice').value = ad.price;
             document.getElementById('adPhone').value = ad.phone || "+994 50 545 85 86";
             document.getElementById('adDescription').value = ad.description;
-            document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
+            document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et";
 
             currentEditingImages = [...(ad.images || [])];
             renderEditingThumbnails();
@@ -1052,10 +1052,10 @@
                 
                 <div class="flex items-center gap-2 mb-6 flex-wrap">
                     <span class="text-xs font-semibold text-slate-400 mr-1">Paylaş:</span>
-                    <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(ad.title + ' - ' + adSpecificUrl)}" target="_blank" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                    <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(ad.title + ' - ' + adSpecificUrl)}" target="_blank" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
                         <i class="fa-brands fa-whatsapp"></i> WhatsApp
                     </a>
-                    <button onclick="navigator.clipboard.writeText('${adSpecificUrl}'); showToast('Elanın linki kopyalandı!');" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                    <button onclick="navigator.clipboard.writeText('${adSpecificUrl}'); showToast('Elanın linki kopyalandı!');" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
                         <i class="fa-solid fa-copy"></i> Elanın linkini kopyala
                     </button>
                 </div>
@@ -1121,7 +1121,7 @@
                 document.getElementById('addAdForm').reset();
                 document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
                 document.getElementById('adPhone').value = "+994 50 545 85 86";
-                document.getElementById('modalTitleText').innerText = "Yeni İşlənmiş Elan Yerləşdir (Admin)";
+                document.getElementById('modalTitleText').innerText = "Yeni İşlənmiş Elan Yerləşdir";
                 document.getElementById('adIsVip').checked = false;
                 document.getElementById('adCondition').value = "Yeni";
                 currentEditingImages = [];
@@ -1202,4 +1202,4 @@
 
         function checkUrlForAd() {
             const urlParams = new URLSearchParams(window.location.search);
-         
+            const adId = urlParam
