@@ -163,16 +163,16 @@
                     <input type="text" id="adTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="Məs: Qol saatı və ya Noutbuk">
                 </div>
 
-                <!-- VIP & Pinned Checkboxes -->
+                <!-- VIP & Pinned Checkboxes (Mutual Exclusive) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="flex items-center space-x-2 bg-amber-50 border border-amber-200 p-3 rounded-xl">
-                        <input type="checkbox" id="adIsVip" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 cursor-pointer">
+                        <input type="checkbox" id="adIsVip" onchange="handleVipPinnedChange('vip')" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 cursor-pointer">
                         <label for="adIsVip" class="text-xs font-bold text-amber-900 cursor-pointer flex items-center gap-1.5">
                             <i class="fa-solid fa-crown text-amber-500"></i> VIP Et
                         </label>
                     </div>
                     <div class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
-                        <input type="checkbox" id="adIsPinned" class="w-4 h-4 text-primary border-emerald-300 rounded focus:ring-primary cursor-pointer">
+                        <input type="checkbox" id="adIsPinned" onchange="handleVipPinnedChange('pinned')" class="w-4 h-4 text-primary border-emerald-300 rounded focus:ring-primary cursor-pointer">
                         <label for="adIsPinned" class="text-xs font-bold text-emerald-900 cursor-pointer flex items-center gap-1.5">
                             <i class="fa-solid fa-thumbtack text-primary"></i> Pinned (Xüsusi) Et
                         </label>
@@ -356,6 +356,18 @@
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
+
+        // VIP və Pinned qarşılıqlı məhdudiyyət funksiyası
+        window.handleVipPinnedChange = function(type) {
+            const vipCheckbox = document.getElementById('adIsVip');
+            const pinnedCheckbox = document.getElementById('adIsPinned');
+
+            if (type === 'vip' && vipCheckbox.checked) {
+                pinnedCheckbox.checked = false;
+            } else if (type === 'pinned' && pinnedCheckbox.checked) {
+                vipCheckbox.checked = false;
+            }
+        };
 
         window.formatPhoneInput = function(input) {
             let digits = input.value.replace(/\D/g, '');
@@ -897,7 +909,6 @@
             }
             empty.classList.add('hidden');
 
-            // 1. Qruplaşdırma (Admin tərəfindən seçilən isVip və isPinned əsasında)
             const vipAds = list.filter(ad => ad.isVip);
             const pinnedAds = list.filter(ad => !ad.isVip && ad.isPinned);
             const normalAds = list.filter(ad => !ad.isVip && !ad.isPinned);
