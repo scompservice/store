@@ -127,8 +127,8 @@
         <!-- Category Tabs -->
         <div id="categoryTabsContainer" class="flex space-x-2 overflow-x-auto pb-4 mb-6 no-scrollbar"></div>
 
-        <!-- Listings Grid -->
-        <div id="listingsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        <!-- Listings Container -->
+        <div id="listingsContainer" class="space-y-10"></div>
 
         <!-- Empty state -->
         <div id="emptyState" class="hidden text-center py-16">
@@ -163,15 +163,23 @@
                     <input type="text" id="adTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="Məs: Qol saatı və ya Noutbuk">
                 </div>
 
-                <!-- VIP Checkbox -->
-                <div class="flex items-center space-x-2 bg-amber-50 border border-amber-200 p-3 rounded-xl">
-                    <input type="checkbox" id="adIsVip" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 cursor-pointer">
-                    <label for="adIsVip" class="text-xs font-bold text-amber-900 cursor-pointer flex items-center gap-1.5">
-                        <i class="fa-solid fa-crown text-amber-500"></i> VIP Elan et (Ən yuxarıda göstərilsin)
-                    </label>
+                <!-- VIP & Pinned Checkboxes -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="flex items-center space-x-2 bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                        <input type="checkbox" id="adIsVip" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 cursor-pointer">
+                        <label for="adIsVip" class="text-xs font-bold text-amber-900 cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-solid fa-crown text-amber-500"></i> VIP Et
+                        </label>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+                        <input type="checkbox" id="adIsPinned" class="w-4 h-4 text-primary border-emerald-300 rounded focus:ring-primary cursor-pointer">
+                        <label for="adIsPinned" class="text-xs font-bold text-emerald-900 cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-solid fa-thumbtack text-primary"></i> Pinned (Xüsusi) Et
+                        </label>
+                    </div>
                 </div>
 
-                <!-- Condition Selection (Yeni / İşlənmiş) -->
+                <!-- Condition Selection -->
                 <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-2">Malın Vəziyyəti</label>
                     <div class="flex items-center space-x-6">
@@ -242,17 +250,17 @@
         </div>
     </div>
 
-    <!-- FULLSCREEN IMAGE VIEWER MODAL WITH SLIDER -->
+    <!-- FULLSCREEN IMAGE VIEWER MODAL -->
     <div id="imageModal" class="fixed inset-0 z-[60] bg-black/95 hidden flex items-center justify-center p-4">
         <button onclick="closeImageModal()" class="absolute top-6 right-6 text-white text-3xl hover:text-slate-300 z-20 cursor-pointer p-2"><i class="fa-solid fa-xmark"></i></button>
-        <button onclick="prevFullscreenImage()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/30 backdrop-blur-md w-12 h-12 rounded-full flex items-center justify-center text-xl z-20 transition cursor-pointer">
+        <button onclick="prevFullscreenImage()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/15 hover:bg-white/30 backdrop-blur-md w-12 h-12 rounded-full flex items-center justify-center text-xl z-20 transition cursor-pointer">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
         <div class="max-w-4xl max-h-[85vh] flex flex-col items-center justify-center relative">
             <img id="fullscreenImg" src="" class="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl">
             <span id="imageCounter" class="text-white/80 text-xs mt-3 font-semibold tracking-wide bg-white/10 px-3 py-1 rounded-full">1 / 1</span>
         </div>
-        <button onclick="nextFullscreenImage()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/30 backdrop-blur-md w-12 h-12 rounded-full flex items-center justify-center text-xl z-20 transition cursor-pointer">
+        <button onclick="nextFullscreenImage()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/15 hover:bg-white/30 backdrop-blur-md w-12 h-12 rounded-full flex items-center justify-center text-xl z-20 transition cursor-pointer">
             <i class="fa-solid fa-chevron-right"></i>
         </button>
     </div>
@@ -387,10 +395,8 @@
         window.toggleSiteShareMenu = function() {
             const dropdown = document.getElementById('siteShareDropdown');
             dropdown.classList.toggle('hidden');
-            
             const siteUrl = window.location.origin + window.location.pathname;
             const shareText = "ElanSaytı - Ən son elanlar";
-            
             document.getElementById('shareWhatsapp').href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText + ' - ' + siteUrl);
         };
 
@@ -478,7 +484,6 @@
             const previousSubCat = keepSubCatSelection ? subSelect.value : '';
             
             subSelect.innerHTML = '<option value="">Alt Kateqoriyalar</option>';
-
             const categoriesToProcess = selectedMainCat ? { [selectedMainCat]: categoriesData[selectedMainCat] } : categoriesData;
 
             for (const [catName, details] of Object.entries(categoriesToProcess)) {
@@ -655,7 +660,6 @@
                 });
                 
                 document.getElementById('totalAdsCount').innerText = ads.length;
-
                 const currentMainCat = document.getElementById('mainCategorySelect').value;
                 updateSubCategoryDropdown(currentMainCat, true);
 
@@ -745,8 +749,7 @@
             const rawPhoneInput = document.getElementById('adPhone').value;
             const finalPhone = cleanAndFormatPhone(rawPhoneInput);
             const isVipChecked = document.getElementById('adIsVip').checked;
-            
-            // Get selected condition (Yeni / İşlənmiş)
+            const isPinnedChecked = document.getElementById('adIsPinned').checked;
             const selectedCondition = document.querySelector('input[name="adCondition"]:checked') ? document.querySelector('input[name="adCondition"]:checked').value : 'Yeni';
 
             const adData = {
@@ -758,6 +761,7 @@
                 images: finalImages,
                 description: document.getElementById('adDescription').value,
                 isVip: isVipChecked,
+                isPinned: isPinnedChecked,
                 condition: selectedCondition,
                 createdAt: Date.now()
             };
@@ -803,8 +807,8 @@
             document.getElementById('editingAdId').value = ad.id;
             document.getElementById('adTitle').value = ad.title;
             document.getElementById('adIsVip').checked = !!ad.isVip;
+            document.getElementById('adIsPinned').checked = !!ad.isPinned;
             
-            // Set condition radio
             const conditionVal = ad.condition || 'Yeni';
             const conditionRadio = document.querySelector(`input[name="adCondition"][value="${conditionVal}"]`);
             if (conditionRadio) conditionRadio.checked = true;
@@ -873,40 +877,19 @@
                 return matchesSearch && matchesCat;
             });
 
-            const isAllCategoryState = !selectedMainCat && !selectedSubCat && !currentCategoryTab && !search && sort === 'newest';
-
             filtered.sort((a, b) => {
-                if (isAllCategoryState) {
-                    if (a.isVip && !b.isVip) return -1;
-                    if (!a.isVip && b.isVip) return 1;
-
-                    const getPriority = (sub) => {
-                        if (sub === "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri") return 2;
-                        if (sub === "Noutbuklar və netbuklar -> Noutbuk korpusları") return 1;
-                        return 0;
-                    };
-
-                    const pA = getPriority(a.subCategory);
-                    const pB = getPriority(b.subCategory);
-
-                    if (pA !== pB) {
-                        return pB - pA; 
-                    }
-                }
-
                 if (sort === 'price-asc') return a.price - b.price;
                 if (sort === 'price-desc') return b.price - a.price;
-                
                 return (b.createdAt || 0) - (a.createdAt || 0);
             });
 
-            renderAds(filtered, isAllCategoryState);
+            renderAds(filtered);
         };
 
-        function renderAds(list, isAllCategoryState) {
-            const grid = document.getElementById('listingsGrid');
+        function renderAds(list) {
+            const container = document.getElementById('listingsContainer');
             const empty = document.getElementById('emptyState');
-            grid.innerHTML = '';
+            container.innerHTML = '';
 
             if (list.length === 0) {
                 empty.classList.remove('hidden');
@@ -914,75 +897,93 @@
             }
             empty.classList.add('hidden');
 
-            const pinnedSubCategories = [
-                "Noutbuklar və netbuklar -> Noutbuklar üçün ehtiyyat hissələri",
-                "Noutbuklar və netbuklar -> Noutbuk korpusları"
-            ];
+            // 1. Qruplaşdırma (Admin tərəfindən seçilən isVip və isPinned əsasında)
+            const vipAds = list.filter(ad => ad.isVip);
+            const pinnedAds = list.filter(ad => !ad.isVip && ad.isPinned);
+            const normalAds = list.filter(ad => !ad.isVip && !ad.isPinned);
 
-            list.forEach(ad => {
-                const isFav = favorites.some(f => f.id === ad.id);
-                const displayPhone = ad.phone || "+994 50 545 85 86";
-                const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
-                const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
+            const appendSection = (titleText, badgeIcon, adsArray, sectionId) => {
+                if (adsArray.length === 0) return;
+
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = "space-y-4";
                 
-                const isPinned = isAllCategoryState && pinnedSubCategories.includes(ad.subCategory);
-                const isVip = ad.isVip;
-                const condition = ad.condition || 'Yeni';
-
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl border " + (isVip ? 'border-amber-400 shadow-lg ring-2 ring-amber-400/20' : (isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200')) + " overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between";
-                
-                let badgeHTML = '';
-                if (isVip) {
-                    badgeHTML += '<span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-crown"></i> VIP</span>';
-                }
-                if (isPinned) {
-                    badgeHTML += '<span class="absolute top-3 ' + (isVip ? 'left-16' : 'left-3') + ' bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
-                }
-
-                const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıب?";
-
-                card.innerHTML = `
-                    <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
-                        <img src="${mainImg}" class="w-full h-full object-contain">
-                        ${badgeHTML}
-                        ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (isVip || isPinned ? 'left-28' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
-                        
-                        <!-- Condition Badge on Card -->
-                        <span class="absolute bottom-3 right-3 ${condition === 'Yeni' ? 'bg-emerald-600' : 'bg-slate-700'} text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow">
-                            ${condition}
-                        </span>
-
-                        <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
-                            <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
-                        </div>
-                        <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
-                            <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i>
-                        </button>
+                sectionDiv.innerHTML = `
+                    <div class="flex items-center space-x-2 border-b border-slate-200 pb-3">
+                        <i class="fa-solid ${badgeIcon} text-primary text-lg"></i>
+                        <h2 class="text-lg font-extrabold text-slate-900">${titleText}</h2>
+                        <span class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">${adsArray.length}</span>
                     </div>
-                    <div class="p-5 flex-grow flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
-                                <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
-                                <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
-                            </div>
-                            ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
-                            <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
-                            <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
-                        </div>
-                        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <span class="text-lg font-extrabold text-slate-900">${ad.price.toLocaleString()} AZN</span>
-                            <div class="flex items-center gap-2">
-                                <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsgText)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
-                                    <i class="fa-brands fa-whatsapp"></i>
-                                </a>
-                                <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="${sectionId}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 `;
-                grid.appendChild(card);
-            });
+                
+                container.appendChild(sectionDiv);
+                const gridEl = sectionDiv.querySelector('#' + sectionId);
+
+                adsArray.forEach(ad => {
+                    const isFav = favorites.some(f => f.id === ad.id);
+                    const displayPhone = ad.phone || "+994 50 545 85 86";
+                    const cleanPhone = displayPhone.replace(/[^0-9]/g,'');
+                    const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
+                    const condition = ad.condition || 'Yeni';
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-2xl border " + (ad.isVip ? 'border-amber-400 shadow-lg ring-2 ring-amber-400/20' : (ad.isPinned ? 'border-primary shadow-md ring-1 ring-primary/20' : 'border-slate-200')) + " overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between";
+                    
+                    let badgeHTML = '';
+                    if (ad.isVip) {
+                        badgeHTML += '<span class="absolute top-3 left-3 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-crown"></i> VIP</span>';
+                    } else if (ad.isPinned) {
+                        badgeHTML += '<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
+                    }
+
+                    const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
+
+                    card.innerHTML = `
+                        <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
+                            <img src="${mainImg}" class="w-full h-full object-contain">
+                            ${badgeHTML}
+                            ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (badgeHTML ? 'left-20' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
+                            
+                            <span class="absolute bottom-3 right-3 ${condition === 'Yeni' ? 'bg-emerald-600' : 'bg-slate-700'} text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow">
+                                ${condition}
+                            </span>
+
+                            <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
+                                <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
+                            </div>
+                            <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
+                                <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i>
+                            </button>
+                        </div>
+                        <div class="p-5 flex-grow flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
+                                    <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
+                                    <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
+                                </div>
+                                ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
+                                <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
+                                <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-lg font-extrabold text-slate-900">${ad.price.toLocaleString()} AZN</span>
+                                <div class="flex items-center gap-2">
+                                    <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsgText)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                    </a>
+                                    <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    gridEl.appendChild(card);
+                });
+            };
+
+            appendSection("VIP Elanlar", "fa-crown", vipAds, "vipGrid");
+            appendSection("Xüsusi Elanlar (Pinned)", "fa-thumbtack", pinnedAds, "pinnedGrid");
+            appendSection("Digər Elanlar", "fa-rectangle-ad", normalAds, "normalGrid");
         }
 
         window.setCategoryTab = function(cat) {
@@ -990,11 +991,9 @@
             document.getElementById('mainCategorySelect').value = cat;
             updateSubCategoryDropdown(cat, false);
             updateActiveTabUI(cat);
-            
             if (cat === '') {
                 document.getElementById('sortSelect').value = 'newest';
             }
-            
             filterAds();
         };
 
@@ -1012,14 +1011,12 @@
             const cleanPhone = displayPhone.replace(/[^0-9]/g, '');
             const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
             const whatsappUrl = "https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(whatsappMsgText);
-            
             const adSpecificUrl = window.location.origin + window.location.pathname + "?id=" + ad.id;
             const condition = ad.condition || 'Yeni';
 
             let imagesHTML = '';
             if (ad.images && ad.images.length > 0) {
                 const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
-                
                 let thumbsHTML = '';
                 if (ad.images.length > 1) {
                     thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
@@ -1139,6 +1136,7 @@
                 document.getElementById('adPhone').value = "+994 50 545 85 86";
                 document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
                 document.getElementById('adIsVip').checked = false;
+                document.getElementById('adIsPinned').checked = false;
                 document.querySelector('input[name="adCondition"][value="Yeni"]').checked = true;
                 currentEditingImages = [];
                 renderEditingThumbnails();
