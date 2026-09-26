@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ElanSaytı</title>
+	<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2310B981'/><text x='16' y='24' font-family='Arial, sans-serif' font-size='24' font-weight='bold' fill='white' text-anchor='middle'>H</text></svg>">
+    <title>Elan Saytı</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -319,7 +320,7 @@
                 icon: "fa-laptop",
                 sub: {
                     "Audio və video": ["Mikrofonlar", "Qulaqliqlar", "Digər"],
-                    "Kompüter aksesuarları": ["Kabellər və adapterlər", "Klaviaturalar və kompüter siçanları", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "Digər"],
+                    "Kompüter aksesuarları": ["Kabellər və adapterlər", "Klaviaturalar və kompüter siçanları", "COM port adapterləri, kabellər və birləşdiricilər", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "Digər"],
                     "Oyunlar, pultlar və proqramlar": ["Proqramlar"],
                     "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları", "Sərt disklər (HDD, SSD)", "Video kartlar", "Digər"],
                     "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarları", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk korpusları"],
@@ -515,7 +516,7 @@
 
                         let opt = document.createElement('option');
                         opt.value = valueName;
-                        opt.text = "◇  " + item + " (" + count + ")";
+                        opt.text = "\u00A0\u00A0\u00A0\u00A0  " + item + " (" + count + ")";
                         subSelect.appendChild(opt);
                     });
                 }
@@ -559,7 +560,7 @@
                     const valueName = subGroup + " -> " + item;
                     let opt = document.createElement('option');
                     opt.value = valueName;
-                    opt.text = "◇  " + item;
+                    opt.text = "\u00A0\u00A0\u00A0\u00A0  " + item;
                     modalSubSelect.appendChild(opt);
                 });
             }
