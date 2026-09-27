@@ -515,6 +515,13 @@
             document.getElementById('siteShareDropdown').classList.add('hidden');
         };
 
+        window.copyAdText = function(title, description, price, phone) {
+            const textToCopy = `${title}\n\n${description}\n\nQiymət: ${price} AZN\nƏlaqə: ${phone}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast('Elan mətni kopyalandı!');
+            });
+        };
+
         window.addEventListener('click', function(e) {
             const container = document.getElementById('siteShareDropdown');
             if (container && !e.target.closest('button[onclick="toggleSiteShareMenu()"]') && !container.contains(e.target)) {
@@ -1177,6 +1184,9 @@
                     </a>
                     <button onclick="navigator.clipboard.writeText('${adSpecificUrl}'); showToast('Elanın linki kopyalandı!');" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
                         <i class="fa-solid fa-copy"></i> Elanın linkini kopyala
+                    </button>
+                    <button onclick='copyAdText(${JSON.stringify(ad.title)}, ${JSON.stringify(ad.description)}, ${JSON.stringify(ad.price.toLocaleString())}, ${JSON.stringify(displayPhone)})' class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-lines"></i> Mətni kopyala
                     </button>
                 </div>
 
