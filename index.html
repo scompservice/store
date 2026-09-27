@@ -384,7 +384,7 @@
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
 
-        // Admin miqrasiya funksiyası (Əsas və Alt kateqoriya ad dəyişikliklərini bazada yeniləyir)
+        // Admin miqrasiya funksiyası (Böyük/kiçik hərf və boşluq fərqlərini nəzərə alaraq yeniləyir)
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -393,16 +393,18 @@
 
             const typeEl = document.querySelector('input[name="migrationType"]:checked');
             const type = typeEl ? typeEl.value : 'category';
-            const oldVal = document.getElementById('oldCatInput').value.trim();
+            const oldValInput = document.getElementById('oldCatInput').value.trim();
             const newVal = document.getElementById('newCatInput').value.trim();
 
-            if (!oldVal || !newVal) {
+            if (!oldValInput || !newVal) {
                 showToast("Həm köhnə, həm də yeni adı daxil edin!", "error");
                 return;
             }
 
+            const oldValLower = oldValInput.toLowerCase();
             const targetName = type === 'category' ? 'əsas kateqoriyanı' : 'alt kateqoriyanı';
-            if (!confirm(`Bütün elanlarda ${targetName} "${oldVal}" adını "${newVal}" ilə əvəz etmək istədiyinizə əminsiniz?`)) {
+            
+            if (!confirm(`Bütün elanlarda ${targetName} "${oldValInput}" adını "${newVal}" ilə əvəz etmək istədiyinizə əminsiniz?`)) {
                 return;
             }
 
@@ -412,13 +414,34 @@
 
                 for (const docSnap of querySnapshot.docs) {
                     const data = docSnap.data();
-                    if (type === 'category' && data.category === oldVal) {
-                        await updateDoc(doc(db, "ads", docSnap.id), { category: newVal });
-                        updatedCount++;
-                    } else if (type === 'subCategory' && data.subCategory && data.subCategory.includes(oldVal)) {
-                        const updatedSub = data.subCategory.replace(oldVal, newVal);
-                        await updateDoc(doc(db, "ads", docSnap.id), { subCategory: updatedSub });
-                        updatedCount++;
+                    
+                    if (type === 'category' && data.category) {
+                        if (data.category.trim().toLowerCase() === oldValLower) {
+                            await updateDoc(doc(db, "ads", docSnap.id), { category: newVal });
+                            updatedCount++;
+                        }
+                    } else if (type === 'subCategory' && data.subCategory) {
+                        if (data.subCategory.toLowerCase().includes(oldValLower)) {
+                            // Alt kateqoriyanın uyğun hissəsini yeni adla əvəz edirik
+                            const parts = data.subCategory.split('->');
+                            if (parts.length === 2) {
+                                let groupPart = parts[0].trim();
+                                let itemPart = parts[1].trim();
+                                
+                                if (groupPart.toLowerCase() === oldValLower) {
+                                    groupPart = newVal;
+                                } else if (itemPart.toLowerCase() === oldValLower) {
+                                    itemPart = newVal;
+                                }
+                                const updatedSub = groupPart + " -> " + itemPart;
+                                await updateDoc(doc(db, "ads", docSnap.id), { subCategory: updatedSub });
+                                updatedCount++;
+                            } else {
+                                // Sadəcə mətn daxilində tapdıqda birbaşa dəyişirik
+                                await updateDoc(doc(db, "ads", docSnap.id), { subCategory: newVal });
+                                updatedCount++;
+                            }
+                        }
                     }
                 }
 
