@@ -157,6 +157,31 @@
                 <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
+            <!-- Admin Kateqoriya Miqrasiya Paneli (Gizli/Açılan) -->
+            <div class="mb-6 border border-amber-200 bg-amber-50/50 rounded-2xl p-4">
+                <button type="button" onclick="document.getElementById('migrationContent').classList.toggle('hidden')" class="w-full flex items-center justify-between text-xs font-bold text-amber-900 uppercase">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-tools"></i> Kateqoriya Miqrasiya Aləti</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div id="migrationContent" class="hidden mt-3 pt-3 border-t border-amber-200 space-y-3">
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-1.5 text-xs font-semibold text-amber-900 cursor-pointer">
+                            <input type="radio" name="migrationType" value="category" checked class="text-amber-600 focus:ring-amber-500"> Əsas Kateqoriya
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs font-semibold text-amber-900 cursor-pointer">
+                            <input type="radio" name="migrationType" value="subCategory" class="text-amber-600 focus:ring-amber-500"> Alt Kateqoriya
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" id="oldCatInput" placeholder="Köhnə ad..." class="px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <input type="text" id="newCatInput" placeholder="Yeni ad..." class="px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                    </div>
+                    <button type="button" onclick="runAdminMigration()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-xl text-xs font-bold transition shadow">
+                        Bazada Yenilə
+                    </button>
+                </div>
+            </div>
+
             <form id="addAdForm" onsubmit="submitAd(event)" class="space-y-4">
                 <input type="hidden" id="editingAdId" value="">
                 <div>
@@ -358,6 +383,52 @@
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
+
+        // Admin miqrasiya funksiyası (Əsas və Alt kateqoriya ad dəyişikliklərini bazada yeniləyir)
+        window.runAdminMigration = async function() {
+            if (!currentUser) {
+                showToast("Bunun üçün admin olmalısınız!", "error");
+                return;
+            }
+
+            const typeEl = document.querySelector('input[name="migrationType"]:checked');
+            const type = typeEl ? typeEl.value : 'category';
+            const oldVal = document.getElementById('oldCatInput').value.trim();
+            const newVal = document.getElementById('newCatInput').value.trim();
+
+            if (!oldVal || !newVal) {
+                showToast("Həm köhnə, həm də yeni adı daxil edin!", "error");
+                return;
+            }
+
+            const targetName = type === 'category' ? 'əsas kateqoriyanı' : 'alt kateqoriyanı';
+            if (!confirm(`Bütün elanlarda ${targetName} "${oldVal}" adını "${newVal}" ilə əvəz etmək istədiyinizə əminsiniz?`)) {
+                return;
+            }
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "ads"));
+                let updatedCount = 0;
+
+                for (const docSnap of querySnapshot.docs) {
+                    const data = docSnap.data();
+                    if (type === 'category' && data.category === oldVal) {
+                        await updateDoc(doc(db, "ads", docSnap.id), { category: newVal });
+                        updatedCount++;
+                    } else if (type === 'subCategory' && data.subCategory && data.subCategory.includes(oldVal)) {
+                        const updatedSub = data.subCategory.replace(oldVal, newVal);
+                        await updateDoc(doc(db, "ads", docSnap.id), { subCategory: updatedSub });
+                        updatedCount++;
+                    }
+                }
+
+                showToast(`${updatedCount} ədəd elan uğurla yeniləndi!`);
+                document.getElementById('oldCatInput').value = '';
+                document.getElementById('newCatInput').value = '';
+            } catch (err) {
+                showToast("Xəta baş verdi: " + err.message, "error");
+            }
+        };
 
         // VIP və Pinned qarşılıqlı məhdudiyyət funksiyası
         window.handleVipPinnedChange = function(type) {
