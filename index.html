@@ -916,11 +916,11 @@ function renderEditingThumbnails() {
 
         div.innerHTML = `
             <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
-            <!-- Sil düyməsi (Səliqəli mərkəzləşdirilmiş X) -->
-<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-bold shadow transition z-10 leading-none" title="Sil">
-    ✕
-</button>
             
+			<!-- Sil düyməsi (Səliqəli mərkəzləşdirilmiş X) -->
+			<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900;" title="Sil">
+				✕
+			</button>
             
             <!-- Sola fırlat düyməsi -->
             <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
