@@ -254,12 +254,12 @@
 
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Şəkil Seç (Çoxlu seçə bilərsiniz)</label>
-                    <input type="file" id="adImageFiles" multiple accept="image/*" onchange="handleNewFiles(this)" class="hidden">
+                    <input type="file" id="adImageFiles" multiple accept="image/*" onchange="handleNewFiles(this)" class="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer">
                 </div>
 
-                <div id="imagePreviewContainer">
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Seçilmiş Şəkillər (Silmək üçün üzərinə basın)</label>
-                    <div id="previewThumbnails" class="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-40 overflow-y-auto"></div>
+                <div id="imagePreviewContainer" style="display: none;">
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Seçilmiş Şəkillər (Sürüşdürərək sıralaya, silə və ya fırlada bilərsiniz)</label>
+                    <div id="previewThumbnails" class="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-48 overflow-y-auto"></div>
                 </div>
 
                 <div>
@@ -385,13 +385,10 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
-        let currentEditingImages = []; 
+        let currentEditingImages = []; // Hər element: { src, rotation }
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
-
-        let currentDetailImages = [];
-        let currentDetailIndex = 0;
 
         // Admin miqrasiya funksiyası
         window.runAdminMigration = async function() {
@@ -847,13 +844,39 @@
             });
         }
 
+        // Şəkili fırlatmaq üçün köməkçi funksiya (canvas üzərində)
+        function rotateBase64Image(base64Image, degrees) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (degrees === 90 || degrees === 270) {
+                        canvas.width = img.height;
+                        canvas.height = img.width;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.save();
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate((degrees * Math.PI) / 180);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    ctx.restore();
+                    resolve(canvas.toDataURL('image/jpeg', 0.75));
+                };
+                img.src = base64Image;
+            });
+        }
+
         window.handleNewFiles = async function(input) {
             if (input.files && input.files.length > 0) {
                 showToast("Şəkillər yüklənir...", "info");
                 for (let i = 0; i < input.files.length; i++) {
                     try {
                         const base64Url = await resizeAndConvertImage(input.files[i]);
-                        currentEditingImages.push(base64Url);
+                        currentEditingImages.push({ src: base64Url, rotation: 0 });
                     } catch(err) { 
                         console.error(err);
                         showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
@@ -864,6 +887,84 @@
                 showToast("Şəkillər uğurla əlavə olundu!");
             }
         };
+
+        // --- YENİ ŞƏKİL İDARƏETMƏSİ (Drag & Drop, Silmə, Fırlatma) ---
+        function renderEditingThumbnails() {
+            const container = document.getElementById('imagePreviewContainer');
+            const thumbs = document.getElementById('previewThumbnails');
+            thumbs.innerHTML = '';
+
+            if (currentEditingImages.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            currentEditingImages.forEach((imgObj, index) => {
+                const div = document.createElement('div');
+                div.className = "relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
+                div.draggable = true;
+                div.dataset.index = index;
+
+                // Drag & Drop hadisələri
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
+
+                div.innerHTML = `
+                    <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
+                    
+                    <!-- Sil düyməsi (X) -->
+                    <button type="button" onclick="removeEditingImage(${index})" class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sil">
+                        &times;
+                    </button>
+                    
+                    <!-- Fırlat düyməsi -->
+                    <button type="button" onclick="rotateEditingImage(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Fırlat">
+                        <i class="fa-solid fa-redo-alt text-[10px]"></i>
+                    </button>
+                `;
+                thumbs.appendChild(div);
+            });
+        }
+
+        window.removeEditingImage = function(index) {
+            currentEditingImages.splice(index, 1);
+            renderEditingThumbnails();
+        };
+
+        window.rotateEditingImage = function(index) {
+            currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
+            renderEditingThumbnails();
+        };
+
+        let draggedEditingIndex = null;
+
+        function handleDragStart(e) {
+            draggedEditingIndex = parseInt(this.dataset.index);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetIndex = parseInt(this.dataset.index);
+            if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
+                const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
+                currentEditingImages.splice(targetIndex, 0, movedItem);
+                renderEditingThumbnails();
+            }
+        }
+
+        function handleDragEnd(e) {
+            draggedEditingIndex = null;
+        }
+        // -------------------------------------------------------------
 
         window.submitAd = async function(e) {
             e.preventDefault();
@@ -877,7 +978,17 @@
             submitBtn.innerText = "Yüklənir...";
 
             const editingId = document.getElementById('editingAdId').value;
-            let finalImages = [...currentEditingImages];
+            
+            // Fırlatma dərəcələri tətbiq olunmuş şəkilləri son massivə yığırıq
+            let finalImages = [];
+            for (let imgObj of currentEditingImages) {
+                if (imgObj.rotation !== 0) {
+                    const rotatedBase64 = await rotateBase64Image(imgObj.src, imgObj.rotation);
+                    finalImages.push(rotatedBase64);
+                } else {
+                    finalImages.push(imgObj.src);
+                }
+            }
             
             if (finalImages.length === 0) {
                 finalImages = ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
@@ -982,40 +1093,12 @@
             document.getElementById('adDescription').value = ad.description;
             document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
 
-            currentEditingImages = [...(ad.images || [])];
+            currentEditingImages = (ad.images || []).map(src => ({ src: src, rotation: 0 }));
             renderEditingThumbnails();
 
             closeDetailModal();
             openAddModal();
         };
-
-        function renderEditingThumbnails() {
-            const container = document.getElementById('imagePreviewContainer');
-            const thumbs = document.getElementById('previewThumbnails');
-            thumbs.innerHTML = '';
-
-            container.style.display = 'block';
-
-            currentEditingImages.forEach((imgSrc, index) => {
-                const div = document.createElement('div');
-                div.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 group cursor-pointer flex-shrink-0 bg-slate-100";
-                div.innerHTML = '<img src="' + imgSrc + '" class="w-full h-full object-contain"><div class="absolute inset-0 bg-red-600/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition" title="Bu şəkli sil"><i class="fa-solid fa-trash"></i></div>';
-                div.onclick = () => {
-                    currentEditingImages.splice(index, 1);
-                    renderEditingThumbnails();
-                };
-                thumbs.appendChild(div);
-            });
-
-            // Şəkil əlavə et qutusu (kamera ikonlu)
-            const addBox = document.createElement('div');
-            addBox.className = "w-16 h-16 rounded-lg border-2 border-dashed border-slate-300 hover:border-primary flex flex-col items-center justify-center cursor-pointer bg-slate-50 text-slate-500 hover:text-primary transition flex-shrink-0";
-            addBox.innerHTML = '<i class="fa-solid fa-camera text-base mb-0.5"></i><span class="text-[9px] font-semibold">Əlavə et</span>';
-            addBox.onclick = () => {
-                document.getElementById('adImageFiles').click();
-            };
-            thumbs.appendChild(addBox);
-        }
 
         window.filterAds = function() {
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -1101,6 +1184,7 @@
                         badgeHTML += '<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
                     }
 
+                    // YALNIZ ADMIN DAXIL OLDUQDA VIP BİTMƏSİNə 3 VƏ YA DAHA AZ GÜN QALDIqda GÖRÜNƏN XƏBƏRDARLIQ VƏ WHATSAPP XATIRLATMA DÜYMƏSİ
                     let adminVipWarningHTML = '';
                     if (currentUser && ad.isVip && ad.vipExpiresAt) {
                         const timeLeft = ad.vipExpiresAt - Date.now();
@@ -1193,9 +1277,6 @@
                 ad.views = (ad.views || 0) + 1;
             } catch (err) { console.error("View count update error:", err); }
 
-            currentDetailImages = ad.images || [];
-            currentDetailIndex = 0;
-
             const displayPhone = ad.phone || "+994 50 545 85 86";
             const cleanPhone = displayPhone.replace(/[^0-9]/g, '');
             const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
@@ -1204,39 +1285,26 @@
             const condition = ad.condition || 'Yeni';
 
             let imagesHTML = '';
-            if (currentDetailImages.length > 0) {
-                const escapedImagesStr = JSON.stringify(currentDetailImages).replace(/"/g, '&quot;');
+            if (ad.images && ad.images.length > 0) {
+                const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
                 let thumbsHTML = '';
-                if (currentDetailImages.length > 1) {
+                if (ad.images.length > 1) {
                     thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
-                    for (let idx = 0; idx < currentDetailImages.length; idx++) {
-                        const img = currentDetailImages[idx];
+                    for (let idx = 0; idx < ad.images.length; idx++) {
+                        const img = ad.images[idx];
                         thumbsHTML += `
                             <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
-                                <img src="${img}" onclick="setDetailImageIndex(${idx})" class="max-w-full max-h-full object-contain">
+                                <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-contain">
                             </div>
                         `;
                     }
                     thumbsHTML += '</div>';
                 }
 
-                let arrowsHTML = '';
-                if (currentDetailImages.length > 1) {
-                    arrowsHTML = `
-                        <button onclick="event.stopPropagation(); prevDetailImage()" class="absolute left-3 top-1/2 -translate-y-1/2 text-white bg-white/15 hover:bg-white/30 backdrop-blur-md w-10 h-10 rounded-full flex items-center justify-center text-sm z-10 transition cursor-pointer">
-                            <i class="fa-solid fa-chevron-left"></i>
-                        </button>
-                        <button onclick="event.stopPropagation(); nextDetailImage()" class="absolute right-3 top-1/2 -translate-y-1/2 text-white bg-white/15 hover:bg-white/30 backdrop-blur-md w-10 h-10 rounded-full flex items-center justify-center text-sm z-10 transition cursor-pointer">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </button>
-                    `;
-                }
-
                 imagesHTML = `
                     <div class="mb-6">
                         <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
-                            <img id="mainDetailImg" src="${currentDetailImages[0]}" onclick="openImageModalWithList(${escapedImagesStr}, currentDetailIndex)" class="max-w-full max-h-full object-contain cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
-                            ${arrowsHTML}
+                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-contain cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
                         </div>
                         ${thumbsHTML}
                     </div>
@@ -1298,42 +1366,6 @@
                 </div>
             `;
             document.getElementById('detailModal').classList.remove('hidden');
-        };
-
-        window.setDetailImageIndex = function(index) {
-            if (currentDetailImages.length > 0) {
-                currentDetailIndex = index;
-                const mainImg = document.getElementById('mainDetailImg');
-                if (mainImg) {
-                    mainImg.src = currentDetailImages[currentDetailIndex];
-                    const escapedImagesStr = JSON.stringify(currentDetailImages).replace(/"/g, '&quot;');
-                    mainImg.setAttribute('onclick', `openImageModalWithList(${escapedImagesStr}, ${currentDetailIndex})`);
-                }
-            }
-        };
-
-        window.nextDetailImage = function() {
-            if (currentDetailImages.length > 1) {
-                currentDetailIndex = (currentDetailIndex + 1) % currentDetailImages.length;
-                const mainImg = document.getElementById('mainDetailImg');
-                if (mainImg) {
-                    mainImg.src = currentDetailImages[currentDetailIndex];
-                    const escapedImagesStr = JSON.stringify(currentDetailImages).replace(/"/g, '&quot;');
-                    mainImg.setAttribute('onclick', `openImageModalWithList(${escapedImagesStr}, ${currentDetailIndex})`);
-                }
-            }
-        };
-
-        window.prevDetailImage = function() {
-            if (currentDetailImages.length > 1) {
-                currentDetailIndex = (currentDetailIndex - 1 + currentDetailImages.length) % currentDetailImages.length;
-                const mainImg = document.getElementById('mainDetailImg');
-                if (mainImg) {
-                    mainImg.src = currentDetailImages[currentDetailIndex];
-                    const escapedImagesStr = JSON.stringify(currentDetailImages).replace(/"/g, '&quot;');
-                    mainImg.setAttribute('onclick', `openImageModalWithList(${escapedImagesStr}, ${currentDetailIndex})`);
-                }
-            }
         };
 
         window.closeDetailModal = () => document.getElementById('detailModal').classList.add('hidden');
