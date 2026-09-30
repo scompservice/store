@@ -77,8 +77,7 @@
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
-
-        // Admin miqrasiya funksiyası
+  
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -532,7 +531,6 @@
             });
         }
 
-        // Şəkili fırlatmaq üçün köməkçi funksiya (həm sağa, həm sola dərəcə ilə)
         function rotateBase64Image(base64Image, degrees) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -576,13 +574,11 @@
             }
         };
 
-        // --- ŞƏKİL İDARƏETMƏSİ (Silmə, Sola fırlat, Sağa fırlat və Sıralama) ---
 		function renderEditingThumbnails() {
 		const container = document.getElementById('imagePreviewContainer');
 		const thumbs = document.getElementById('previewThumbnails');
 		thumbs.innerHTML = '';
 
-		// Həmişə container-i göstərək ki, şəkil olmasa belə əlavə et düyməsi görünsün
 		container.style.display = 'block';
 
 		currentEditingImages.forEach((imgObj, index) => {
@@ -618,7 +614,6 @@
         thumbs.appendChild(div);
     });
 
-    // ➕ "Şəkil əlavə et" düyməsini həmişə şəkillərin AHYRINA əlavə edirik
     const addBtnDiv = document.createElement('div');
     addBtnDiv.innerHTML = `
         <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
@@ -669,7 +664,6 @@ function handleDrop(e) {
 function handleDragEnd(e) {
     draggedEditingIndex = null;
 }
-// -------------------------------------------------------------
 
         window.submitAd = async function(e) {
             e.preventDefault();
