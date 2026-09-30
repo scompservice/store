@@ -205,6 +205,12 @@
                     </div>
                 </div>
 
+                <!-- VIP Müddət Seçimi (Gün ilə) -->
+                <div id="vipDurationContainer" class="hidden bg-amber-50/60 border border-amber-200 p-3 rounded-xl">
+                    <label class="block text-xs font-bold uppercase text-amber-900 mb-1"><i class="fa-solid fa-clock text-amber-600"></i> VIP Müddəti (Gün)</label>
+                    <input type="number" id="vipDays" min="1" value="7" class="w-full px-4 py-2 bg-white border border-amber-300 rounded-xl text-sm focus:outline-none focus:border-amber-500" placeholder="Məs: 7 gün">
+                </div>
+
                 <!-- Condition Selection -->
                 <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-2">Malın Vəziyyəti</label>
@@ -453,15 +459,20 @@
             }
         };
 
-        // VIP və Pinned qarşılıqlı məhdudiyyət funksiyası
+        // VIP və Pinned qarşılıqlı məhdudiyyət funksiyası həmçinin VIP müddət xanasını idarə edir
         window.handleVipPinnedChange = function(type) {
             const vipCheckbox = document.getElementById('adIsVip');
             const pinnedCheckbox = document.getElementById('adIsPinned');
+            const vipDurationContainer = document.getElementById('vipDurationContainer');
 
             if (type === 'vip' && vipCheckbox.checked) {
                 pinnedCheckbox.checked = false;
+                vipDurationContainer.classList.remove('hidden');
             } else if (type === 'pinned' && pinnedCheckbox.checked) {
                 vipCheckbox.checked = false;
+                vipDurationContainer.classList.add('hidden');
+            } else if (!vipCheckbox.checked) {
+                vipDurationContainer.classList.add('hidden');
             }
         };
 
@@ -762,17 +773,32 @@
         }
 
         function listenToAds() {
-            onSnapshot(collection(db, "ads"), (snapshot) => {
+            onSnapshot(collection(db, "ads"), async (snapshot) => {
                 ads = [];
-                snapshot.forEach((docSnap) => {
+                const now = Date.now();
+
+                for (const docSnap of snapshot.docs) {
                     const data = docSnap.data();
                     let imgList = data.images;
                     if (!imgList || imgList.length === 0) {
                         imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
                     }
                     const formattedPhone = cleanAndFormatPhone(data.phone);
-                    ads.push({ id: docSnap.id, views: 0, ...data, phone: formattedPhone, images: imgList });
-                });
+
+                    // VIP vaxtının bitib-bitmədiyini yoxlayırıq
+                    let isVip = data.isVip;
+                    if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
+                        isVip = false;
+                        // Bazada avtomatik olaraq adi elana çeviririk
+                        try {
+                            await updateDoc(doc(db, "ads", docSnap.id), { isVip: false });
+                        } catch (e) {
+                            console.error("VIP vaxtı bitmə yenilənmə xətası:", e);
+                        }
+                    }
+
+                    ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
+                }
                 
                 document.getElementById('totalAdsCount').innerText = ads.length;
                 const currentMainCat = document.getElementById('mainCategorySelect').value;
@@ -867,6 +893,12 @@
             const isPinnedChecked = document.getElementById('adIsPinned').checked;
             const selectedCondition = document.querySelector('input[name="adCondition"]:checked') ? document.querySelector('input[name="adCondition"]:checked').value : 'Yeni';
 
+            let vipExpiresAt = null;
+            if (isVipChecked) {
+                const days = parseInt(document.getElementById('vipDays').value) || 7;
+                vipExpiresAt = Date.now() + (days * 24 * 60 * 60 * 1000);
+            }
+
             const adData = {
                 title: document.getElementById('adTitle').value,
                 category: mainCategoryVal,
@@ -876,6 +908,7 @@
                 images: finalImages,
                 description: document.getElementById('adDescription').value,
                 isVip: isVipChecked,
+                vipExpiresAt: vipExpiresAt,
                 isPinned: isPinnedChecked,
                 condition: selectedCondition,
                 createdAt: Date.now()
@@ -884,6 +917,9 @@
             try {
                 if (editingId) {
                     delete adData.createdAt; 
+                    if (!isVipChecked) {
+                        adData.vipExpiresAt = null;
+                    }
                     await updateDoc(doc(db, "ads", editingId), adData);
                     showToast("Elan uğurla yeniləndi!");
                 } else {
@@ -924,6 +960,17 @@
             document.getElementById('adIsVip').checked = !!ad.isVip;
             document.getElementById('adIsPinned').checked = !!ad.isPinned;
             
+            const vipDurationContainer = document.getElementById('vipDurationContainer');
+            if (ad.isVip) {
+                vipDurationContainer.classList.remove('hidden');
+                if (ad.vipExpiresAt) {
+                    const remainingDays = Math.max(1, Math.ceil((ad.vipExpiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
+                    document.getElementById('vipDays').value = remainingDays;
+                }
+            } else {
+                vipDurationContainer.classList.add('hidden');
+            }
+
             const conditionVal = ad.condition || 'Yeni';
             const conditionRadio = document.querySelector(`input[name="adCondition"][value="${conditionVal}"]`);
             if (conditionRadio) conditionRadio.checked = true;
@@ -1254,6 +1301,7 @@
                 document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
                 document.getElementById('adIsVip').checked = false;
                 document.getElementById('adIsPinned').checked = false;
+                document.getElementById('vipDurationContainer').classList.add('hidden');
                 document.querySelector('input[name="adCondition"][value="Yeni"]').checked = true;
                 currentEditingImages = [];
                 renderEditingThumbnails();
