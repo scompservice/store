@@ -252,14 +252,24 @@
                     </div>
                 </div>
 
+                <!-- TAP.AZ STİLİNDƏ ŞƏKİL ƏLAVƏ ETMƏ SAHƏSİ -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Şəkil Seç (Çoxlu seçə bilərsiniz)</label>
-                    <input type="file" id="adImageFiles" multiple accept="image/*" onchange="handleNewFiles(this)" class="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer">
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Şəkillər</label>
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <!-- Şəkil əlavə etmə düyməsi (Tap.az üslubunda) -->
+                        <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-emerald-400 bg-emerald-50/50 hover:bg-emerald-50 rounded-2xl flex flex-col items-center justify-center text-primary cursor-pointer transition shadow-sm">
+                            <i class="fa-solid fa-camera text-2xl mb-1"></i>
+                            <span class="text-[11px] font-bold">Şəkil əlavə et</span>
+                        </label>
+                        <input type="file" id="adImageFiles" multiple accept="image/*" onchange="handleNewFiles(this)" class="hidden">
+                        
+                        <!-- Seçilmiş şəkillərin önizləmə sahəsi -->
+                        <div id="previewThumbnails" class="flex flex-wrap gap-2 overflow-x-auto max-w-full"></div>
+                    </div>
                 </div>
 
                 <div id="imagePreviewContainer" style="display: none;">
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Seçilmiş Şəkillər (Sürüşdürərək sıralaya, silə və ya fırlada bilərsiniz)</label>
-                    <div id="previewThumbnails" class="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-48 overflow-y-auto"></div>
+                    <p class="text-[11px] text-slate-400 mt-1">Şəkillərin üzərindəki sola/sağa fırlatma düymələrindən istifadə edə bilərsiniz.</p>
                 </div>
 
                 <div>
@@ -844,14 +854,14 @@
             });
         }
 
-        // Şəkili fırlatmaq üçün köməkçi funksiya (canvas üzərində)
+        // Şəkili fırlatmaq üçün köməkçi funksiya (həm sağa, həm sola dərəcə ilə)
         function rotateBase64Image(base64Image, degrees) {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    if (degrees === 90 || degrees === 270) {
+                    if (degrees === 90 || degrees === 270 || degrees === -90 || degrees === -270) {
                         canvas.width = img.height;
                         canvas.height = img.width;
                     } else {
@@ -888,7 +898,7 @@
             }
         };
 
-        // --- YENİ ŞƏKİL İDARƏETMƏSİ (Drag & Drop, Silmə, Fırlatma) ---
+        // --- ŞƏKİL İDARƏETMƏSİ (Silmə, Sola fırlat, Sağa fırlat və Sıralama) ---
         function renderEditingThumbnails() {
             const container = document.getElementById('imagePreviewContainer');
             const thumbs = document.getElementById('previewThumbnails');
@@ -902,7 +912,7 @@
             container.style.display = 'block';
             currentEditingImages.forEach((imgObj, index) => {
                 const div = document.createElement('div');
-                div.className = "relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
+                div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
                 div.draggable = true;
                 div.dataset.index = index;
 
@@ -920,9 +930,14 @@
                         &times;
                     </button>
                     
-                    <!-- Fırlat düyməsi -->
-                    <button type="button" onclick="rotateEditingImage(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Fırlat">
-                        <i class="fa-solid fa-redo-alt text-[10px]"></i>
+                    <!-- Sola fırlat düyməsi -->
+                    <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                    </button>
+
+                    <!-- Sağa fırlat düyməsi -->
+                    <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
+                        <i class="fa-solid fa-rotate-right text-[10px]"></i>
                     </button>
                 `;
                 thumbs.appendChild(div);
@@ -934,7 +949,12 @@
             renderEditingThumbnails();
         };
 
-        window.rotateEditingImage = function(index) {
+        window.rotateEditingImageLeft = function(index) {
+            currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
+            renderEditingThumbnails();
+        };
+
+        window.rotateEditingImageRight = function(index) {
             currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
             renderEditingThumbnails();
         };
@@ -1184,7 +1204,6 @@
                         badgeHTML += '<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
                     }
 
-                    // YALNIZ ADMIN DAXIL OLDUQDA VIP BİTMƏSİNə 3 VƏ YA DAHA AZ GÜN QALDIqda GÖRÜNƏN XƏBƏRDARLIQ VƏ WHATSAPP XATIRLATMA DÜYMƏSİ
                     let adminVipWarningHTML = '';
                     if (currentUser && ad.isVip && ad.vipExpiresAt) {
                         const timeLeft = ad.vipExpiresAt - Date.now();
