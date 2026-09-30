@@ -390,7 +390,7 @@
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
 
-        // Admin miqrasiya funksiyası (Böyük/kiçik hərf və boşluq fərqlərini nəzərə alaraq yeniləyir)
+        // Admin miqrasiya funksiyası
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -428,7 +428,6 @@
                         }
                     } else if (type === 'subCategory' && data.subCategory) {
                         if (data.subCategory.toLowerCase().includes(oldValLower)) {
-                            // Alt kateqoriyanın uyğun hissəsini yeni adla əvəz edirik
                             const parts = data.subCategory.split('->');
                             if (parts.length === 2) {
                                 let groupPart = parts[0].trim();
@@ -443,7 +442,6 @@
                                 await updateDoc(doc(db, "ads", docSnap.id), { subCategory: updatedSub });
                                 updatedCount++;
                             } else {
-                                // Sadəcə mətn daxilində tapdıqda birbaşa dəyişirik
                                 await updateDoc(doc(db, "ads", docSnap.id), { subCategory: newVal });
                                 updatedCount++;
                             }
@@ -459,7 +457,6 @@
             }
         };
 
-        // VIP və Pinned qarşılıqlı məhdudiyyət funksiyası həmçinin VIP müddət xanasını idarə edir
         window.handleVipPinnedChange = function(type) {
             const vipCheckbox = document.getElementById('adIsVip');
             const pinnedCheckbox = document.getElementById('adIsPinned');
@@ -785,11 +782,9 @@
                     }
                     const formattedPhone = cleanAndFormatPhone(data.phone);
 
-                    // VIP vaxtının bitib-bitmədiyini yoxlayırıq
                     let isVip = data.isVip;
                     if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
                         isVip = false;
-                        // Bazada avtomatik olaraq adi elana çeviririk
                         try {
                             await updateDoc(doc(db, "ads", docSnap.id), { isVip: false });
                         } catch (e) {
@@ -1098,6 +1093,22 @@
                         badgeHTML += '<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
                     }
 
+                    // YALNIZ ADMIN DAXIL OLDUQDA VIP ELANLARIN ÜZƏRİNDƏ GÖRÜNƏN XƏBƏRDARLIQ/VAXT GÖSTƏRİCİSİ
+                    let adminVipWarningHTML = '';
+                    if (currentUser && ad.isVip && ad.vipExpiresAt) {
+                        const timeLeft = ad.vipExpiresAt - Date.now();
+                        const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+                        if (timeLeft > 0) {
+                            if (daysLeft <= 2) {
+                                adminVipWarningHTML = `<div class="mt-2.5 bg-rose-50 border border-rose-200 text-rose-600 text-[11px] px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> VIP bitməsinə ${daysLeft} gün qaldı!</div>`;
+                            } else {
+                                adminVipWarningHTML = `<div class="mt-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] px-2.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP bitməsinə: ${daysLeft} gün</div>`;
+                            }
+                        } else {
+                            adminVipWarningHTML = `<div class="mt-2.5 bg-slate-100 border border-slate-200 text-slate-600 text-[11px] px-2.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP müddəti bitib</div>`;
+                        }
+                    }
+
                     const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
 
                     card.innerHTML = `
@@ -1126,6 +1137,7 @@
                                 ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
                                 <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
                                 <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
+                                ${adminVipWarningHTML}
                             </div>
                             <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
                                 <span class="text-lg font-extrabold text-slate-900">${ad.price.toFixed(2)} AZN</span>
