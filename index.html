@@ -258,8 +258,8 @@
                 </div>
 
                 <div id="imagePreviewContainer" style="display: none;">
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Seçilmiş Şəkillər (Silmək üçün üzərinə basın)</label>
-                    <div id="previewThumbnails" class="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-40 overflow-y-auto"></div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Seçilmiş Şəkillər (Sürüşdürərək sıralaya, silə və ya fırlada bilərsiniz)</label>
+                    <div id="previewThumbnails" class="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-48 overflow-y-auto"></div>
                 </div>
 
                 <div>
@@ -385,7 +385,7 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
-        let currentEditingImages = []; 
+        let currentEditingImages = []; // Hər element: { src, rotation }
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
@@ -844,13 +844,39 @@
             });
         }
 
+        // Şəkili fırlatmaq üçün köməkçi funksiya (canvas üzərində)
+        function rotateBase64Image(base64Image, degrees) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (degrees === 90 || degrees === 270) {
+                        canvas.width = img.height;
+                        canvas.height = img.width;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.save();
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate((degrees * Math.PI) / 180);
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    ctx.restore();
+                    resolve(canvas.toDataURL('image/jpeg', 0.75));
+                };
+                img.src = base64Image;
+            });
+        }
+
         window.handleNewFiles = async function(input) {
             if (input.files && input.files.length > 0) {
                 showToast("Şəkillər yüklənir...", "info");
                 for (let i = 0; i < input.files.length; i++) {
                     try {
                         const base64Url = await resizeAndConvertImage(input.files[i]);
-                        currentEditingImages.push(base64Url);
+                        currentEditingImages.push({ src: base64Url, rotation: 0 });
                     } catch(err) { 
                         console.error(err);
                         showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
@@ -861,6 +887,84 @@
                 showToast("Şəkillər uğurla əlavə olundu!");
             }
         };
+
+        // --- YENİ ŞƏKİL İDARƏETMƏSİ (Drag & Drop, Silmə, Fırlatma) ---
+        function renderEditingThumbnails() {
+            const container = document.getElementById('imagePreviewContainer');
+            const thumbs = document.getElementById('previewThumbnails');
+            thumbs.innerHTML = '';
+
+            if (currentEditingImages.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            currentEditingImages.forEach((imgObj, index) => {
+                const div = document.createElement('div');
+                div.className = "relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
+                div.draggable = true;
+                div.dataset.index = index;
+
+                // Drag & Drop hadisələri
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
+
+                div.innerHTML = `
+                    <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
+                    
+                    <!-- Sil düyməsi (X) -->
+                    <button type="button" onclick="removeEditingImage(${index})" class="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sil">
+                        &times;
+                    </button>
+                    
+                    <!-- Fırlat düyməsi -->
+                    <button type="button" onclick="rotateEditingImage(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Fırlat">
+                        <i class="fa-solid fa-redo-alt text-[10px]"></i>
+                    </button>
+                `;
+                thumbs.appendChild(div);
+            });
+        }
+
+        window.removeEditingImage = function(index) {
+            currentEditingImages.splice(index, 1);
+            renderEditingThumbnails();
+        };
+
+        window.rotateEditingImage = function(index) {
+            currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
+            renderEditingThumbnails();
+        };
+
+        let draggedEditingIndex = null;
+
+        function handleDragStart(e) {
+            draggedEditingIndex = parseInt(this.dataset.index);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetIndex = parseInt(this.dataset.index);
+            if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
+                const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
+                currentEditingImages.splice(targetIndex, 0, movedItem);
+                renderEditingThumbnails();
+            }
+        }
+
+        function handleDragEnd(e) {
+            draggedEditingIndex = null;
+        }
+        // -------------------------------------------------------------
 
         window.submitAd = async function(e) {
             e.preventDefault();
@@ -874,7 +978,17 @@
             submitBtn.innerText = "Yüklənir...";
 
             const editingId = document.getElementById('editingAdId').value;
-            let finalImages = [...currentEditingImages];
+            
+            // Fırlatma dərəcələri tətbiq olunmuş şəkilləri son massivə yığırıq
+            let finalImages = [];
+            for (let imgObj of currentEditingImages) {
+                if (imgObj.rotation !== 0) {
+                    const rotatedBase64 = await rotateBase64Image(imgObj.src, imgObj.rotation);
+                    finalImages.push(rotatedBase64);
+                } else {
+                    finalImages.push(imgObj.src);
+                }
+            }
             
             if (finalImages.length === 0) {
                 finalImages = ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
@@ -979,35 +1093,12 @@
             document.getElementById('adDescription').value = ad.description;
             document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
 
-            currentEditingImages = [...(ad.images || [])];
+            currentEditingImages = (ad.images || []).map(src => ({ src: src, rotation: 0 }));
             renderEditingThumbnails();
 
             closeDetailModal();
             openAddModal();
         };
-
-        function renderEditingThumbnails() {
-            const container = document.getElementById('imagePreviewContainer');
-            const thumbs = document.getElementById('previewThumbnails');
-            thumbs.innerHTML = '';
-
-            if (currentEditingImages.length === 0) {
-                container.style.display = 'none';
-                return;
-            }
-
-            container.style.display = 'block';
-            currentEditingImages.forEach((imgSrc, index) => {
-                const div = document.createElement('div');
-                div.className = "relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 group cursor-pointer flex-shrink-0 bg-slate-100";
-                div.innerHTML = '<img src="' + imgSrc + '" class="w-full h-full object-contain"><div class="absolute inset-0 bg-red-600/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs transition" title="Bu şəkli sil"><i class="fa-solid fa-trash"></i></div>';
-                div.onclick = () => {
-                    currentEditingImages.splice(index, 1);
-                    renderEditingThumbnails();
-                };
-                thumbs.appendChild(div);
-            });
-        }
 
         window.filterAds = function() {
             const search = document.getElementById('searchInput').value.toLowerCase();
