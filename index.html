@@ -897,93 +897,100 @@
             }
         };
 
-        // --- ŞƏKİL İDARƏETMƏSİ (Silmə, Sola fırlat, Sağa fırlat və Sıralama) ---
-        function renderEditingThumbnails() {
-            const container = document.getElementById('imagePreviewContainer');
-            const thumbs = document.getElementById('previewThumbnails');
-            thumbs.innerHTML = '';
+       // --- ŞƏKİL İDARƏETMƏSİ (Silmə, Sola fırlat, Sağa fırlat və Sıralama) ---
+function renderEditingThumbnails() {
+    const container = document.getElementById('imagePreviewContainer');
+    const thumbs = document.getElementById('previewThumbnails');
+    thumbs.innerHTML = '';
 
-            if (currentEditingImages.length === 0) {
-                container.style.display = 'none';
-                return;
-            }
+    // Həmişə container-i göstərək ki, şəkil olmasa belə əlavə et düyməsi görünsün
+    container.style.display = 'block';
 
-            container.style.display = 'block';
-            currentEditingImages.forEach((imgObj, index) => {
-                const div = document.createElement('div');
-                div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
-                div.draggable = true;
-                div.dataset.index = index;
+    currentEditingImages.forEach((imgObj, index) => {
+        const div = document.createElement('div');
+        div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
+        div.draggable = true;
+        div.dataset.index = index;
 
-                // Drag & Drop hadisələri
-                div.addEventListener('dragstart', handleDragStart);
-                div.addEventListener('dragover', handleDragOver);
-                div.addEventListener('drop', handleDrop);
-                div.addEventListener('dragend', handleDragEnd);
+        // Drag & Drop hadisələri
+        div.addEventListener('dragstart', handleDragStart);
+        div.addEventListener('dragover', handleDragOver);
+        div.addEventListener('drop', handleDrop);
+        div.addEventListener('dragend', handleDragEnd);
 
-                div.innerHTML = `
-                    <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
-                    
-					<!-- Sil düyməsi (Tap.az üslubunda: şəffaf ağ fonda qırmızı X) -->
-                    <button type="button" onclick="removeEditingImage(${index})" class="absolute top-1 right-1 bg-white/80 hover:bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow transition z-10" title="Sil">
-                        &times;
-                    </button>
-                    
-                    <!-- Sola fırlat düyməsi -->
-                    <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
-                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
-                    </button>
+        div.innerHTML = `
+            <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
+            
+            <!-- Sil düyməsi (Tap.az üslubunda: şəffaf ağ fonda qırmızı X) -->
+            <button type="button" onclick="removeEditingImage(${index})" class="absolute top-1 right-1 bg-white/80 hover:bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow transition z-10" title="Sil">
+                &times;
+            </button>
+            
+            <!-- Sola fırlat düyməsi -->
+            <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
+                <i class="fa-solid fa-rotate-left text-[10px]"></i>
+            </button>
 
-                    <!-- Sağa fırlat düyməsi -->
-                    <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
-                        <i class="fa-solid fa-rotate-right text-[10px]"></i>
-                    </button>
-                `;
-                thumbs.appendChild(div);
-            });
-        }
+            <!-- Sağa fırlat düyməsi -->
+            <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
+                <i class="fa-solid fa-rotate-right text-[10px]"></i>
+            </button>
+        `;
+        thumbs.appendChild(div);
+    });
 
-        window.removeEditingImage = function(index) {
-            currentEditingImages.splice(index, 1);
-            renderEditingThumbnails();
-        };
+    // ➕ "Şəkil əlavə et" düyməsini həmişə şəkillərin AHYRINA əlavə edirik
+    const addBtnDiv = document.createElement('div');
+    addBtnDiv.innerHTML = `
+        <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
+            <i class="fa-solid fa-camera text-2xl mb-1"></i>
+            <span class="text-[11px] font-bold">Şəkil əlavə et</span>
+        </label>
+    `;
+    thumbs.appendChild(addBtnDiv.firstElementChild);
+}
 
-        window.rotateEditingImageLeft = function(index) {
-            currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
-            renderEditingThumbnails();
-        };
+window.removeEditingImage = function(index) {
+    currentEditingImages.splice(index, 1);
+    renderEditingThumbnails();
+};
 
-        window.rotateEditingImageRight = function(index) {
-            currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
-            renderEditingThumbnails();
-        };
+window.rotateEditingImageLeft = function(index) {
+    currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
+    renderEditingThumbnails();
+};
 
-        let draggedEditingIndex = null;
+window.rotateEditingImageRight = function(index) {
+    currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
+    renderEditingThumbnails();
+};
 
-        function handleDragStart(e) {
-            draggedEditingIndex = parseInt(this.dataset.index);
-            e.dataTransfer.effectAllowed = 'move';
-        }
+let draggedEditingIndex = null;
 
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        }
+function handleDragStart(e) {
+    draggedEditingIndex = parseInt(this.dataset.index);
+    e.dataTransfer.effectAllowed = 'move';
+}
 
-        function handleDrop(e) {
-            e.preventDefault();
-            const targetIndex = parseInt(this.dataset.index);
-            if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
-                const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
-                currentEditingImages.splice(targetIndex, 0, movedItem);
-                renderEditingThumbnails();
-            }
-        }
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
 
-        function handleDragEnd(e) {
-            draggedEditingIndex = null;
-        }
-        // -------------------------------------------------------------
+function handleDrop(e) {
+    e.preventDefault();
+    const targetIndex = parseInt(this.dataset.index);
+    if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
+        const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
+        currentEditingImages.splice(targetIndex, 0, movedItem);
+        renderEditingThumbnails();
+    }
+}
+
+function handleDragEnd(e) {
+    draggedEditingIndex = null;
+}
+// -------------------------------------------------------------
 
         window.submitAd = async function(e) {
             e.preventDefault();
