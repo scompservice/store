@@ -1093,19 +1093,13 @@
                         badgeHTML += '<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
                     }
 
-                    // YALNIZ ADMIN DAXIL OLDUQDA VIP ELANLARIN ÜZƏRİNDƏ GÖRÜNƏN XƏBƏRDARLIQ/VAXT GÖSTƏRİCİSİ
+                    // YALNIZ ADMIN DAXIL OLDUQDA VIP BİTMƏSİNƏ 3 VƏ YA DAHA AZ GÜN QALDIqda GÖRÜNƏN XƏBƏRDARLIQ
                     let adminVipWarningHTML = '';
                     if (currentUser && ad.isVip && ad.vipExpiresAt) {
                         const timeLeft = ad.vipExpiresAt - Date.now();
                         const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-                        if (timeLeft > 0) {
-                            if (daysLeft <= 2) {
-                                adminVipWarningHTML = `<div class="mt-2.5 bg-rose-50 border border-rose-200 text-rose-600 text-[11px] px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> VIP bitməsinə ${daysLeft} gün qaldı!</div>`;
-                            } else {
-                                adminVipWarningHTML = `<div class="mt-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] px-2.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP bitməsinə: ${daysLeft} gün</div>`;
-                            }
-                        } else {
-                            adminVipWarningHTML = `<div class="mt-2.5 bg-slate-100 border border-slate-200 text-slate-600 text-[11px] px-2.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP müddəti bitib</div>`;
+                        if (timeLeft > 0 && daysLeft <= 3) {
+                            adminVipWarningHTML = `<div class="mt-2.5 bg-rose-50 border border-rose-200 text-rose-600 text-[11px] px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> VIP bitməsinə ${daysLeft} gün qaldı!</div>`;
                         }
                     }
 
