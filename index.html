@@ -917,8 +917,8 @@ function renderEditingThumbnails() {
         div.innerHTML = `
             <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
             
-			<!-- Sil düyməsi (Səliqəli mərkəzləşdirilmiş X) -->
-			<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900;" title="Sil">
+			<!-- Sil düyməsi (Maksimum qalın X) -->
+			<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900; -webkit-text-stroke: 0.8px #dc2626;" title="Sil">
 				✕
 			</button>
             
