@@ -1093,13 +1093,25 @@
                         badgeHTML += '<span class="absolute top-3 left-3 bg-primary text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1"><i class="fa-solid fa-thumbtack"></i> Xüsusi</span>';
                     }
 
-                    // YALNIZ ADMIN DAXIL OLDUQDA VIP BİTMƏSİNƏ 3 VƏ YA DAHA AZ GÜN QALDIqda GÖRÜNƏN XƏBƏRDARLIQ
+                    // YALNIZ ADMIN DAXIL OLDUQDA VIP BİTMƏSİNə 3 VƏ YA DAHA AZ GÜN QALDIqda GÖRÜNƏN XƏBƏRDARLIQ VƏ WHATSAPP XATIRLATMA DÜYMƏSİ
                     let adminVipWarningHTML = '';
                     if (currentUser && ad.isVip && ad.vipExpiresAt) {
                         const timeLeft = ad.vipExpiresAt - Date.now();
                         const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
                         if (timeLeft > 0 && daysLeft <= 3) {
-                            adminVipWarningHTML = `<div class="mt-2.5 bg-rose-50 border border-rose-200 text-rose-600 text-[11px] px-2.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> VIP bitməsinə ${daysLeft} gün qaldı!</div>`;
+                            const reminderMsg = `Salam, "${ad.title}" elanınızın VIP statusunun bitməsinə ${daysLeft} gün qaldı. Yeniləmək üçün əlaqə saxlayın.`;
+                            const reminderWhatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(reminderMsg)}`;
+
+                            adminVipWarningHTML = `
+                                <div class="mt-2.5 bg-rose-50 border border-rose-200 p-2.5 rounded-xl space-y-2">
+                                    <div class="text-rose-600 text-[11px] font-bold flex items-center gap-1.5">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> VIP bitməsinə ${daysLeft} gün qaldı!
+                                    </div>
+                                    <a href="${reminderWhatsappUrl}" target="_blank" onclick="event.stopPropagation()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition shadow-sm">
+                                        <i class="fa-brands fa-whatsapp text-xs"></i> WhatsApp-a xatırlat
+                                    </a>
+                                </div>
+                            `;
                         }
                     }
 
