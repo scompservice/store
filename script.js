@@ -1,23 +1,21 @@
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-		import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-		import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-		import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js"; // <-- ƏLAVƏ OLUNDU
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
-		const firebaseConfig = {
-			apiKey: "AIzaSyCwqM_2qvOX99DNTu9nAClaT9KVSSOl0h0",
-			authDomain: "elanlar-ff4cb.firebaseapp.com",
-			projectId: "elanlar-ff4cb",
-			storageBucket: "elanlar-ff4cb.firebasestorage.app",
-			messagingSenderId: "593281324616",
-			appId: "1:593281324616:web:7ce0215af0bb9c5c422a7d",
-			measurementId: "G-EHHSNEM0SV"
-		};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwqM_2qvOX99DNTu9nAClaT9KVSSOl0h0",
+            authDomain: "elanlar-ff4cb.firebaseapp.com",
+            projectId: "elanlar-ff4cb",
+            storageBucket: "elanlar-ff4cb.firebasestorage.app",
+            messagingSenderId: "593281324616",
+            appId: "1:593281324616:web:7ce0215af0bb9c5c422a7d",
+            measurementId: "G-EHHSNEM0SV"
+        };
 
-		const app = initializeApp(firebaseConfig);
-		const db = getFirestore(app);
-		const auth = getAuth(app);
-		const storage = getStorage(app); // <-- ƏLAVƏ OLUNDU
-		const provider = new GoogleAuthProvider();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
         const categoriesData = {
             "Şəxsi əşyalar": {
@@ -533,14 +531,6 @@
                 reader.readAsDataURL(file);
             });
         }
-		
-		// Base64 formatını Storage-a yükləmək üçün Blob faylına çeviririk
-		function dataURLtoBlob(dataurl) {
-			let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-				bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-			while(n--) { u8arr[n] = bstr.charCodeAt(n); }
-			return new Blob([u8arr], {type:mime});
-		}
 
         // Şəkili fırlatmaq üçün köməkçi funksiya (həm sağa, həm sola dərəcə ilə)
         function rotateBase64Image(base64Image, degrees) {
@@ -690,26 +680,19 @@ function handleDragEnd(e) {
 
             const submitBtn = document.getElementById('submitAdBtn');
             submitBtn.disabled = true;
-            submitBtn.innerText = "Şəkillər yüklənir...";
+            submitBtn.innerText = "Yüklənir...";
 
             const editingId = document.getElementById('editingAdId').value;
             
-            // Şəkilləri birbaşa Firebase Storage-a yükləyirik və linklərini alırıq
+            // Fırlatma dərəcələri tətbiq olunmuş şəkilləri son massivə yığırıq
             let finalImages = [];
-            for (let i = 0; i < currentEditingImages.length; i++) {
-                let imgObj = currentEditingImages[i];
-                let processedBase64 = imgObj.src;
-                
+            for (let imgObj of currentEditingImages) {
                 if (imgObj.rotation !== 0) {
-                    processedBase64 = await rotateBase64Image(imgObj.src, imgObj.rotation);
+                    const rotatedBase64 = await rotateBase64Image(imgObj.src, imgObj.rotation);
+                    finalImages.push(rotatedBase64);
+                } else {
+                    finalImages.push(imgObj.src);
                 }
-
-                // Blob-a çevirib Storage-a göndəririk
-                const blob = dataURLtoBlob(processedBase64);
-                const storageRef = ref(storage, 'ads_images/' + Date.now() + '_' + i + '.jpg');
-                await uploadBytes(storageRef, blob);
-                const downloadURL = await getDownloadURL(storageRef);
-                finalImages.push(downloadURL);
             }
             
             if (finalImages.length === 0) {
