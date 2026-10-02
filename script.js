@@ -1,21 +1,23 @@
 		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+		import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+		import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+		import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js"; // <-- ƏLAVƏ OLUNDU
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCwqM_2qvOX99DNTu9nAClaT9KVSSOl0h0",
-            authDomain: "elanlar-ff4cb.firebaseapp.com",
-            projectId: "elanlar-ff4cb",
-            storageBucket: "elanlar-ff4cb.firebasestorage.app",
-            messagingSenderId: "593281324616",
-            appId: "1:593281324616:web:7ce0215af0bb9c5c422a7d",
-            measurementId: "G-EHHSNEM0SV"
-        };
+		const firebaseConfig = {
+			apiKey: "AIzaSyCwqM_2qvOX99DNTu9nAClaT9KVSSOl0h0",
+			authDomain: "elanlar-ff4cb.firebaseapp.com",
+			projectId: "elanlar-ff4cb",
+			storageBucket: "elanlar-ff4cb.firebasestorage.app",
+			messagingSenderId: "593281324616",
+			appId: "1:593281324616:web:7ce0215af0bb9c5c422a7d",
+			measurementId: "G-EHHSNEM0SV"
+		};
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+		const app = initializeApp(firebaseConfig);
+		const db = getFirestore(app);
+		const auth = getAuth(app);
+		const storage = getStorage(app); // <-- ƏLAVƏ OLUNDU
+		const provider = new GoogleAuthProvider();
 
         const categoriesData = {
             "Şəxsi əşyalar": {
@@ -77,7 +79,8 @@
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
-  
+
+        // Admin miqrasiya funksiyası
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -530,7 +533,16 @@
                 reader.readAsDataURL(file);
             });
         }
+		
+		// Base64 formatını Storage-a yükləmək üçün Blob faylına çeviririk
+		function dataURLtoBlob(dataurl) {
+			let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+				bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+			while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+			return new Blob([u8arr], {type:mime});
+		}
 
+        // Şəkili fırlatmaq üçün köməkçi funksiya (həm sağa, həm sola dərəcə ilə)
         function rotateBase64Image(base64Image, degrees) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -574,11 +586,13 @@
             }
         };
 
+        // --- ŞƏKİL İDARƏETMƏSİ (Silmə, Sola fırlat, Sağa fırlat və Sıralama) ---
 		function renderEditingThumbnails() {
 		const container = document.getElementById('imagePreviewContainer');
 		const thumbs = document.getElementById('previewThumbnails');
 		thumbs.innerHTML = '';
 
+		// Həmişə container-i göstərək ki, şəkil olmasa belə əlavə et düyməsi görünsün
 		container.style.display = 'block';
 
 		currentEditingImages.forEach((imgObj, index) => {
@@ -614,6 +628,7 @@
         thumbs.appendChild(div);
     });
 
+    // ➕ "Şəkil əlavə et" düyməsini həmişə şəkillərin AHYRINA əlavə edirik
     const addBtnDiv = document.createElement('div');
     addBtnDiv.innerHTML = `
         <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
@@ -664,6 +679,7 @@ function handleDrop(e) {
 function handleDragEnd(e) {
     draggedEditingIndex = null;
 }
+// -------------------------------------------------------------
 
         window.submitAd = async function(e) {
             e.preventDefault();
@@ -674,19 +690,26 @@ function handleDragEnd(e) {
 
             const submitBtn = document.getElementById('submitAdBtn');
             submitBtn.disabled = true;
-            submitBtn.innerText = "Yüklənir...";
+            submitBtn.innerText = "Şəkillər yüklənir...";
 
             const editingId = document.getElementById('editingAdId').value;
             
-            // Fırlatma dərəcələri tətbiq olunmuş şəkilləri son massivə yığırıq
+            // Şəkilləri birbaşa Firebase Storage-a yükləyirik və linklərini alırıq
             let finalImages = [];
-            for (let imgObj of currentEditingImages) {
+            for (let i = 0; i < currentEditingImages.length; i++) {
+                let imgObj = currentEditingImages[i];
+                let processedBase64 = imgObj.src;
+                
                 if (imgObj.rotation !== 0) {
-                    const rotatedBase64 = await rotateBase64Image(imgObj.src, imgObj.rotation);
-                    finalImages.push(rotatedBase64);
-                } else {
-                    finalImages.push(imgObj.src);
+                    processedBase64 = await rotateBase64Image(imgObj.src, imgObj.rotation);
                 }
+
+                // Blob-a çevirib Storage-a göndəririk
+                const blob = dataURLtoBlob(processedBase64);
+                const storageRef = ref(storage, 'ads_images/' + Date.now() + '_' + i + '.jpg');
+                await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(storageRef);
+                finalImages.push(downloadURL);
             }
             
             if (finalImages.length === 0) {
