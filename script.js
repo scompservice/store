@@ -1209,3 +1209,55 @@ function handleDragEnd(e) {
         initStats();
         listenToAds();
         checkUrlForAd();
+
+		window.resetAddAdForm = function() {
+			document.getElementById('addAdForm').reset();
+			document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
+			document.getElementById('adPhone').value = "+994 50 545 85 86";
+			document.getElementById('adIsVip').checked = false;
+			document.getElementById('adIsPinned').checked = false;
+			document.getElementById('vipDurationContainer').classList.add('hidden');
+			const defaultCondition = document.querySelector('input[name="adCondition"][value="Yeni"]');
+			if (defaultCondition) defaultCondition.checked = true;
+			currentEditingImages = [];
+			renderEditingThumbnails();
+			checkResetButtonColor();
+			showToast("Forma sıfırlandı", "info");
+		};
+
+		function checkResetButtonColor() {
+			const resetBtn = document.getElementById('resetFormBtn');
+			if (!resetBtn) return;
+
+			const title = document.getElementById('adTitle').value.trim();
+			const mainCat = document.getElementById('modalMainCategory').value;
+			const subCat = document.getElementById('modalSubCategory').value;
+			const price = document.getElementById('adPrice').value.trim();
+			const description = document.getElementById('adDescription').value.trim();
+    
+			if (title || mainCat || subCat || price || description || (typeof currentEditingImages !== 'undefined' && currentEditingImages.length > 0)) {
+				
+				resetBtn.className = "text-red-500 hover:text-red-600 font-semibold transition text-sm cursor-pointer select-none";
+			} else {
+				
+				resetBtn.className = "text-slate-400 font-semibold transition text-sm cursor-pointer select-none";
+			}
+		}
+
+		
+		document.addEventListener('DOMContentLoaded', function() {
+			checkResetButtonColor();
+		});
+
+		
+		document.addEventListener('input', function(e) {
+			if (e.target.closest('#addAdForm')) {
+				checkResetButtonColor();
+			}
+		});
+
+		document.addEventListener('change', function(e) {
+			if (e.target.closest('#addAdForm')) {
+				checkResetButtonColor();
+			}
+		});
