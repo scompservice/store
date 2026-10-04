@@ -44,7 +44,7 @@
                     "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları", "Sərt disklər (HDD, SSD)", "Video kartlar", "Digər"],
                     "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarları", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk korpusları"],
                     "Ofis avadanlığı və istehlak materialları": ["İstehlak və aksesuarlar"],
-                    "Telefonlar": ["Aksesuarlar"],
+                    "Telefonlar": ["Aksesuarlar", "OTG (On-The-Go) adapterləri"],
                     "Şəbəkə və server avadanlığı": ["Routerlər", "Şəbəkə adapterləri", "Şəbəkə avadanlığı aksesuarları", "Digər"]
                 }
             },
