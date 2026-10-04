@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2310B981'/><text x='16' y='24' font-family='Arial, sans-serif' font-size='24' font-weight='bold' fill='white' text-anchor='middle'>H</text></svg>">
     <title>Elan Saytı</title>
-    <!-- Tailwind CSS -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
+    
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -29,8 +29,10 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
+    
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
+    
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <div class="flex items-center space-x-3 cursor-pointer" onclick="resetFilters()">
@@ -55,6 +57,7 @@
                 </div>
             </div>
 
+            
             <div class="flex items-center space-x-3">
                 <div class="relative">
                     <button onclick="toggleSiteShareMenu()" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 transition flex items-center gap-1.5 text-xs font-semibold" title="Saytı Paylaş">
@@ -87,7 +90,9 @@
         </div>
     </header>
 
+    
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
         
         <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 mb-8">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -120,10 +125,13 @@
             </div>
         </div>
 
+        
         <div id="categoryTabsContainer" class="flex space-x-2 overflow-x-auto pb-4 mb-6 no-scrollbar"></div>
 
+        
         <div id="listingsContainer" class="space-y-10"></div>
 
+        
         <div id="emptyState" class="hidden text-center py-16">
             <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 text-2xl mb-4">
                 <i class="fa-solid fa-box-open"></i>
@@ -134,18 +142,25 @@
 
     </main>
 
+    
     <footer class="bg-white border-t border-slate-200 mt-16 py-8">
         <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
             <p>© 2026 ElanSaytı. Bütün hüquqlar qorunur. Məkan: Sumqayıt | Əlaqə: <a href="tel:+994505458586" class="text-primary font-bold">+994 50 545 85 86</a></p>
         </div>
     </footer>
 
+    
     <div id="addModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
-                <h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni Elan Yerləşdir (Admin)</h3>
-                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+				<h3 id="modalTitleText" class="text-xl font-bold text-slate-900">Yeni Elan Yerləşdir (Admin)</h3>
+				<div class="flex items-center gap-4">
+					<!-- Sıfırla Düyməsi -->
+					<button type="button" id="resetFormBtn" onclick="resetAddAdForm()" class="text-slate-400 hover:text-red-500 font-semibold transition text-sm cursor-pointer select-none">Sıfırla</button>
+					<button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
+				</div>
+			</div>
+            
             
             <div class="mb-6 border border-amber-200 bg-amber-50/50 rounded-2xl p-4">
                 <button type="button" onclick="document.getElementById('migrationContent').classList.toggle('hidden')" class="w-full flex items-center justify-between text-xs font-bold text-amber-900 uppercase">
@@ -178,7 +193,7 @@
                     <input type="text" id="adTitle" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-primary" placeholder="Məs: Qol saatı və ya Noutbuk">
                 </div>
 
-                <!-- VIP & Pinned Checkboxes (Mutual Exclusive) -->
+                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="flex items-center space-x-2 bg-amber-50 border border-amber-200 p-3 rounded-xl">
                         <input type="checkbox" id="adIsVip" onchange="handleVipPinnedChange('vip')" class="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 cursor-pointer">
@@ -194,11 +209,13 @@
                     </div>
                 </div>
 
+                
                 <div id="vipDurationContainer" class="hidden bg-amber-50/60 border border-amber-200 p-3 rounded-xl">
                     <label class="block text-xs font-bold uppercase text-amber-900 mb-1"><i class="fa-solid fa-clock text-amber-600"></i> VIP Müddəti (Gün)</label>
                     <input type="number" id="vipDays" min="1" value="7" class="w-full px-4 py-2 bg-white border border-amber-300 rounded-xl text-sm focus:outline-none focus:border-amber-500" placeholder="Məs: 7 gün">
                 </div>
 
+                
                 <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-2">Malın Vəziyyəti</label>
                     <div class="flex items-center space-x-6">
@@ -239,6 +256,7 @@
                     </div>
                 </div>
 
+                
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Şəkillər</label>
                     <div class="flex flex-wrap gap-3 items-center">
@@ -265,6 +283,7 @@
         </div>
     </div>
 
+    
     <div id="detailModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeDetailModal()">
         <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh] relative">
             <button onclick="closeDetailModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 text-xl z-10"><i class="fa-solid fa-xmark"></i></button>
@@ -272,6 +291,7 @@
         </div>
     </div>
 
+    
     <div id="imageModal" class="fixed inset-0 z-[60] bg-black/95 hidden flex items-center justify-center p-4">
         <button onclick="closeImageModal()" class="absolute top-6 right-6 text-white text-3xl hover:text-slate-300 z-20 cursor-pointer p-2"><i class="fa-solid fa-xmark"></i></button>
         <button onclick="prevFullscreenImage()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/15 hover:bg-white/30 backdrop-blur-md w-12 h-12 rounded-full flex items-center justify-center text-xl z-20 transition cursor-pointer">
@@ -286,6 +306,7 @@
         </button>
     </div>
 
+    
     <div id="favoritesModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeFavoritesModal()">
         <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
@@ -296,6 +317,7 @@
         </div>
     </div>
 
+    
     <script type="module" src="script.js"></script>
 </body>
 </html>
