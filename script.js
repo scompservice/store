@@ -914,7 +914,7 @@ function handleDragEnd(e) {
 
                     card.innerHTML = `
                         <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
-                            <img src="${mainImg}" class="w-full h-full object-contain">
+                            <img src="${mainImg}" class="w-full h-full object-cover">
                             ${badgeHTML}
                             ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (badgeHTML ? 'left-20' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
                             
@@ -998,7 +998,7 @@ function handleDragEnd(e) {
                         const img = ad.images[idx];
                         thumbsHTML += `
                             <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
-                                <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-contain">
+                                <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-cover">
                             </div>
                         `;
                     }
@@ -1008,7 +1008,7 @@ function handleDragEnd(e) {
                 imagesHTML = `
                     <div class="mb-6">
                         <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
-                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-contain cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
+                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
                         </div>
                         ${thumbsHTML}
                     </div>
@@ -1169,7 +1169,7 @@ function handleDragEnd(e) {
                 item.innerHTML = `
                     <div class="flex items-center space-x-3 cursor-pointer" onclick="closeFavoritesModal(); openDetail('${ad.id}')">
                         <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
-                            <img src="${mainImg}" class="max-w-full max-h-full object-contain">
+                            <img src="${mainImg}" class="max-w-full max-h-full object-cover">
                         </div>
                         <div>
                             <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${ad.title}</h4>
