@@ -39,10 +39,10 @@
                 icon: "fa-laptop",
                 sub: {
                     "Audio və video": ["Audio aksesuarlar", "Mikrofonlar", "Qulaqlıqlar", "Digər"],
-                    "Kompüter aksesuarları": ["Kabellər və adapterlər", "Klaviaturalar və kompüter siçanları", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "Digər"],
+                    "Kompüter aksesuarları": ["Kabellər və adapterlər", "Klaviaturalar və kompüter siçanları", "PC Component Power & Data Cables", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "Digər"],
                     "Oyunlar, pultlar və proqramlar": ["Proqramlar"],
                     "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları", "Sərt disklər (HDD, SSD)", "Video kartlar", "Digər"],
-                    "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarları", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk korpusları"],
+                    "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarlar", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk korpusları"],
                     "Ofis avadanlığı və istehlak materialları": ["İstehlak və aksesuarlar"],
                     "Telefonlar": ["Aksesuarlar", "OTG (On-The-Go) adapterləri"],
                     "Şəbəkə və server avadanlığı": ["Routerlər", "Şəbəkə adapterləri", "Şəbəkə avadanlığı aksesuarları", "Digər"]
