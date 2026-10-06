@@ -913,7 +913,7 @@ function handleDragEnd(e) {
                     const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
 
                     card.innerHTML = `
-                        <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
+                        <div class="relative h-40 sm:h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
                             <img src="${mainImg}" class="w-full h-full object-cover">
                             ${badgeHTML}
                             ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (badgeHTML ? 'left-20' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
