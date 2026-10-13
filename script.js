@@ -1261,3 +1261,17 @@ function handleDragEnd(e) {
 				checkResetButtonColor();
 			}
 		});
+
+		document.addEventListener('keydown', function(e) {
+			const imageModal = document.getElementById('imageModal');
+			// Əgər şəkil modalı açıqdırsamsa (hidden sinfi yoxdursa)
+			if (imageModal && !imageModal.classList.contains('hidden')) {
+				if (e.key === 'ArrowRight') {
+					nextFullscreenImage(); // Növbəti şəkil
+				} else if (e.key === 'ArrowLeft') {
+					prevFullscreenImage(); // Əvvəlki şəkil
+				} else if (e.key === 'Escape') {
+					closeImageModal(); // Esc düyməsi ilə bağlamaq üçün əlavə imkan
+				}
+			}
+		});
