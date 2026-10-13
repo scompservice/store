@@ -78,7 +78,7 @@
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
 
-        // Admin miqrasiya funksiyası
+        
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -532,7 +532,7 @@
             });
         }
 
-        // Şəkili fırlatmaq üçün köməkçi funksiya (həm sağa, həm sola dərəcə ilə)
+        
         function rotateBase64Image(base64Image, degrees) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -576,13 +576,13 @@
             }
         };
 
-        // --- ŞƏKİL İDARƏETMƏSİ (Silmə, Sola fırlat, Sağa fırlat və Sıralama) ---
+        
 		function renderEditingThumbnails() {
 		const container = document.getElementById('imagePreviewContainer');
 		const thumbs = document.getElementById('previewThumbnails');
 		thumbs.innerHTML = '';
 
-		// Həmişə container-i göstərək ki, şəkil olmasa belə əlavə et düyməsi görünsün
+		
 		container.style.display = 'block';
 
 		currentEditingImages.forEach((imgObj, index) => {
@@ -600,17 +600,17 @@
         div.innerHTML = `
             <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
             
-			<!-- Sil düyməsi (Maksimum qalın X) -->
+			
 			<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900; -webkit-text-stroke: 0.8px #dc2626;" title="Sil">
 				✕
 			</button>
             
-            <!-- Sola fırlat düyməsi -->
+            
             <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
                 <i class="fa-solid fa-rotate-left text-[10px]"></i>
             </button>
 
-            <!-- Sağa fırlat düyməsi -->
+            
             <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
                 <i class="fa-solid fa-rotate-right text-[10px]"></i>
             </button>
@@ -618,7 +618,7 @@
         thumbs.appendChild(div);
     });
 
-    // ➕ "Şəkil əlavə et" düyməsini həmişə şəkillərin AHYRINA əlavə edirik
+    
     const addBtnDiv = document.createElement('div');
     addBtnDiv.innerHTML = `
         <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
@@ -1089,22 +1089,13 @@ function handleDragEnd(e) {
                 counterEl.innerText = (currentFullscreenIndex + 1) + " / " + activeFullscreenImages.length;
             }
         }
-
-        window.nextFullscreenImage = function() {
-            if (activeFullscreenImages.length > 1) {
-                currentFullscreenIndex = (currentFullscreenIndex + 1) % activeFullscreenImages.length;
-                updateFullscreenImageView();
-            }
-        };
-
-        window.prevFullscreenImage = function() {
-            if (activeFullscreenImages.length > 1) {
-                currentFullscreenIndex = (currentFullscreenIndex - 1 + activeFullscreenImages.length) % activeFullscreenImages.length;
-                updateFullscreenImageView();
-            }
-        };
-
-        window.closeImageModal = () => document.getElementById('imageModal').classList.add('hidden');
+		
+		window.closeImageModal = function() {
+			document.getElementById('imageModal').classList.add('hidden');
+			resetImageZoom();
+		};
+		
+        //window.closeImageModal = () => document.getElementById('imageModal').classList.add('hidden');
 
         window.openAddModal = () => {
             if(!document.getElementById('editingAdId').value) {
@@ -1209,7 +1200,7 @@ function handleDragEnd(e) {
         initStats();
         listenToAds();
         checkUrlForAd();
-
+		
 		window.resetAddAdForm = function() {
 			document.getElementById('addAdForm').reset();
 			document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
@@ -1236,10 +1227,10 @@ function handleDragEnd(e) {
 			const description = document.getElementById('adDescription').value.trim();
     
 			if (title || mainCat || subCat || price || description || (typeof currentEditingImages !== 'undefined' && currentEditingImages.length > 0)) {
-				
+				// Dəyişiklik varsa: Qırmızı olsun və üzərinə gəldikdə tündləşsin
 				resetBtn.className = "text-red-500 hover:text-red-600 font-semibold transition text-sm cursor-pointer select-none";
 			} else {
-				
+				// Heç nə yoxdursa: Boz olsun, hover (rəng dəyişməsi) TAMAMİLƏ SÖNÜк OLSUN
 				resetBtn.className = "text-slate-400 font-semibold transition text-sm cursor-pointer select-none";
 			}
 		}
@@ -1261,7 +1252,8 @@ function handleDragEnd(e) {
 				checkResetButtonColor();
 			}
 		});
-
+		
+		
 		document.addEventListener('keydown', function(e) {
 			const imageModal = document.getElementById('imageModal');
 			// Əgər şəkil modalı açıqdırsamsa (hidden sinfi yoxdursa)
@@ -1275,3 +1267,119 @@ function handleDragEnd(e) {
 				}
 			}
 		});
+		
+		
+		let isZoomed = false;
+		const scaleFactor = 2.5; // Yaxınlaşdırma miqyasını buradan tənzimləyə bilərsiniz
+
+		function resetImageZoom() {
+			isZoomed = false;
+			const imgEl = document.getElementById('fullscreenImg');
+			if (imgEl) {
+				imgEl.style.transform = 'translate(0px, 0px) scale(1)';
+				imgEl.style.cursor = 'zoom-in';
+				imgEl.style.transition = 'transform 0.3s ease'; 
+			}
+		}
+
+		window.updateFullscreenImageView = function() {
+			const imgEl = document.getElementById('fullscreenImg');
+			const counterEl = document.getElementById('imageCounter');
+			if (activeFullscreenImages.length > 0 && imgEl) {
+				imgEl.src = activeFullscreenImages[currentFullscreenIndex];
+				counterEl.innerText = (currentFullscreenIndex + 1) + " / " + activeFullscreenImages.length;
+				resetImageZoom();
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			const imgEl = document.getElementById('fullscreenImg');
+			const containerEl = imgEl ? imgEl.parentElement : null;
+			if (!imgEl || !containerEl) return;
+
+			imgEl.style.cursor = 'zoom-in';
+			containerEl.style.overflow = 'hidden';
+
+			
+			imgEl.addEventListener('click', function(e) {
+				e.stopPropagation();
+				isZoomed = !isZoomed;
+
+				if (isZoomed) {
+					imgEl.style.transition = 'transform 0.1s ease-out';
+					imgEl.style.cursor = 'zoom-out';
+
+					// Klik edilən an dərhal mərkəzə uyğun hesablanması üçün:
+					const containerRect = containerEl.getBoundingClientRect();
+					const imgRect = imgEl.getBoundingClientRect();
+
+					const centerX = containerRect.left + containerRect.width / 2;
+					const centerY = containerRect.top + containerRect.height / 2;
+
+					let moveX = (centerX - e.clientX) * (scaleFactor - 1);
+					let moveY = (centerY - e.clientY) * (scaleFactor - 1);
+
+					const maxX = (imgRect.width * scaleFactor - containerRect.width) / 2;
+					const maxY = (imgRect.height * scaleFactor - containerRect.height) / 2;
+
+					moveX = Math.max(-maxX, Math.min(maxX, moveX));
+					moveY = Math.max(-maxY, Math.min(maxY, moveY));
+
+					imgEl.style.transform = `translate(${moveX}px, ${moveY}px) scale(${scaleFactor})`;
+				} else {
+					resetImageZoom();
+				}
+			});
+
+			
+			imgEl.addEventListener('mousemove', function(e) {
+				if (!isZoomed) return;
+
+				const containerRect = containerEl.getBoundingClientRect();
+				const imgRect = imgEl.getBoundingClientRect();
+
+				const centerX = containerRect.left + containerRect.width / 2;
+				const centerY = containerRect.top + containerRect.height / 2;
+
+				let moveX = (centerX - e.clientX) * (scaleFactor - 1);
+				let moveY = (centerY - e.clientY) * (scaleFactor - 1);
+
+				const maxX = (imgRect.width * scaleFactor - containerRect.width) / 2;
+				const maxY = (imgRect.height * scaleFactor - containerRect.height) / 2;
+
+				moveX = Math.max(-maxX, Math.min(maxX, moveX));
+				moveY = Math.max(-maxY, Math.min(maxY, moveY));
+
+				imgEl.style.transform = `translate(${moveX}px, ${moveY}px) scale(${scaleFactor})`;
+			});
+
+			containerEl.addEventListener('mouseleave', function() {
+				if (isZoomed) {
+					 imgEl.style.transform = `translate(0px, 0px) scale(${scaleFactor})`;
+				}
+			});
+			
+			
+			const closeButtons = document.querySelectorAll('.close-modal, .fullscreen-close, [data-dismiss="modal"]');
+			closeButtons.forEach(btn => {
+				btn.addEventListener('click', () => {
+					resetImageZoom();
+				});
+			});
+		});
+
+		window.nextFullscreenImage = function() {
+			if (activeFullscreenImages.length > 1) {
+				currentFullscreenIndex = (currentFullscreenIndex + 1) % activeFullscreenImages.length;
+				updateFullscreenImageView();
+				resetImageZoom();
+			}
+		};
+
+		window.prevFullscreenImage = function() {
+			if (activeFullscreenImages.length > 1) {
+				currentFullscreenIndex = (currentFullscreenIndex - 1 + activeFullscreenImages.length) % activeFullscreenImages.length;
+				updateFullscreenImageView();
+				resetImageZoom();
+			}
+		};
