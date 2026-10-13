@@ -1252,22 +1252,32 @@ function handleDragEnd(e) {
 				checkResetButtonColor();
 			}
 		});
-		
-		
+
 		document.addEventListener('keydown', function(e) {
 			const imageModal = document.getElementById('imageModal');
-			// Əgər şəkil modalı açıqdırsamsa (hidden sinfi yoxdursa)
-			if (imageModal && !imageModal.classList.contains('hidden')) {
+			const detailModal = document.getElementById('detailModal');
+			
+			const isImageModalOpen = imageModal && !imageModal.classList.contains('hidden');
+			const isDetailModalOpen = detailModal && !detailModal.classList.contains('hidden');
+
+			if (e.key === 'Escape') {
+				// 1. Əgər tam ekran şəkil açıqdırsə, əvvəlcə onu bağla
+				if (isImageModalOpen) {
+					closeImageModal();
+				} 
+				// 2. Əgər şəkil bağlıdır, amma elan detalları açıqdırsə, onu bağla
+				else if (isDetailModalOpen) {
+					closeDetailModal();
+				}
+			} else if (isImageModalOpen) {
+				// Ox düymələri yalnız tam ekran şəkil açıq olduqda işləsin
 				if (e.key === 'ArrowRight') {
-					nextFullscreenImage(); // Növbəti şəkil
+					nextFullscreenImage();
 				} else if (e.key === 'ArrowLeft') {
-					prevFullscreenImage(); // Əvvəlki şəkil
-				} else if (e.key === 'Escape') {
-					closeImageModal(); // Esc düyməsi ilə bağlamaq üçün əlavə imkan
+					prevFullscreenImage();
 				}
 			}
 		});
-		
 		
 		let isZoomed = false;
 		const scaleFactor = 2.5; // Yaxınlaşdırma miqyasını buradan tənzimləyə bilərsiniz
