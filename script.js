@@ -492,7 +492,7 @@
             });
         }
 
-        function resizeAndConvertImage(file) {
+        function resizeAndConvertImage(file, quality) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function (event) {
@@ -502,8 +502,8 @@
                         let width = img.width;
                         let height = img.height;
                         
-                        const MAX_WIDTH = 900;
-                        const MAX_HEIGHT = 900;
+                        const MAX_WIDTH = 5000;
+                        const MAX_HEIGHT = 5000;
                         if (width > height) {
                             if (width > MAX_WIDTH) {
                                 height *= MAX_WIDTH / width;
@@ -521,7 +521,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
                         resolve(dataUrl);
                     };
                     img.onerror = reject;
@@ -533,7 +533,7 @@
         }
 
         
-        function rotateBase64Image(base64Image, degrees) {
+        function rotateBase64Image(base64Image, degrees, quality) {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.onload = function() {
@@ -552,29 +552,53 @@
                     ctx.rotate((degrees * Math.PI) / 180);
                     ctx.drawImage(img, -img.width / 2, -img.height / 2);
                     ctx.restore();
-                    resolve(canvas.toDataURL('image/jpeg', 0.75));
+                    resolve(canvas.toDataURL('image/jpeg', quality));
                 };
                 img.src = base64Image;
             });
         }
 
         window.handleNewFiles = async function(input) {
-            if (input.files && input.files.length > 0) {
-                showToast("Şəkillər yüklənir...", "info");
-                for (let i = 0; i < input.files.length; i++) {
-                    try {
-                        const base64Url = await resizeAndConvertImage(input.files[i]);
-                        currentEditingImages.push({ src: base64Url, rotation: 0 });
-                    } catch(err) { 
-                        console.error(err);
-                        showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
-                    }
-                }
-                renderEditingThumbnails();
-                input.value = ''; 
-                showToast("Şəkillər uğurla əlavə olundu!");
-            }
-        };
+			if (input.files && input.files.length > 0) {
+				// Menyudan seçilmiş keyfiyyət dəyərini oxuyuruq (məsələn: 1, 0.90, 0.75 və s.)
+				const qualitySelect = document.getElementById('compressionQuality');
+				const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
+
+				showToast("Şəkillər yüklənir...", "info");
+
+				for (let i = 0; i < input.files.length; i++) {
+					const file = input.files[i];
+
+					try {
+						let finalBase64 = "";
+
+						// Əgər "Orijinal (1)" seçilibsə, heç bir sıxılma etmədən birbaşa oxuyuruq
+						if (quality === 1) {
+							finalBase64 = await new Promise((resolve, reject) => {
+								const reader = new FileReader();
+								reader.onload = (e) => resolve(e.target.result);
+								reader.onerror = reject;
+								reader.readAsDataURL(file);
+							});
+						} else if (typeof resizeAndConvertImage === 'function') {
+							// Seçilmiş keyfiyyəti sıxılma funksiyasına ötürürük
+							finalBase64 = await resizeAndConvertImage(file, quality);
+						}
+
+						if (finalBase64) {
+							currentEditingImages.push({ src: finalBase64, rotation: 0 });
+						}
+					} catch(err) { 
+						console.error(err);
+						showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
+					}
+				}
+				
+				renderEditingThumbnails();
+				input.value = ''; 
+				showToast("Şəkillər uğurla əlavə olundu!");
+			}
+		};
 
         
 		function renderEditingThumbnails() {
@@ -1010,6 +1034,7 @@ function handleDragEnd(e) {
                         <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
                             <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
                         </div>
+						<p class="text-[11px] text-center text-slate-400 mt-1 cursor-pointer -translate-y-2" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
                         ${thumbsHTML}
                     </div>
                 `;
@@ -1252,7 +1277,7 @@ function handleDragEnd(e) {
 				checkResetButtonColor();
 			}
 		});
-
+		
 		document.addEventListener('keydown', function(e) {
 			const imageModal = document.getElementById('imageModal');
 			const detailModal = document.getElementById('detailModal');
@@ -1278,6 +1303,7 @@ function handleDragEnd(e) {
 				}
 			}
 		});
+		
 		
 		let isZoomed = false;
 		const scaleFactor = 2.5; // Yaxınlaşdırma miqyasını buradan tənzimləyə bilərsiniz
