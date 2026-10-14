@@ -1034,7 +1034,7 @@ function handleDragEnd(e) {
                         <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
                             <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
                         </div>
-						<p class="text-[11px] text-center text-slate-400 mt-1 cursor-pointer -translate-y-2" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
+						<p class="text-[12px] text-center text-blue-600 mt-1 cursor-pointer -translate-y-2 hover:text-blue-800 hover:underline" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
                         ${thumbsHTML}
                     </div>
                 `;
