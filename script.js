@@ -1,4 +1,4 @@
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
@@ -73,11 +73,12 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
-        let currentEditingImages = [];
+        let currentEditingImages = []; // Hər element: { src, rotation }
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
 
+        
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -192,7 +193,7 @@
                 digits = digits.substring(3);
             }
             if (digits.length !== 9) return rawPhone;
-            return `+994 ${digits.substring(0, 2)}${digits.substring(2, 5)} ${digits.substring(5, 7)}${digits.substring(7, 9)}`;
+            return `+994 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 7)} ${digits.substring(7, 9)}`;
         }
 
         window.toggleSiteShareMenu = function() {
@@ -246,18 +247,7 @@
 
         function initCategorySelectors() {
             const mainSelect = document.getElementById('mainCategorySelect');
-            const subSelect = document.getElementById('subCategorySelect');
             const tabsContainer = document.getElementById('categoryTabsContainer');
-
-            // 3-cü səviyyə üçün seçici (Sub-Sub Category / Element seçimi) yoxdursa dinamik əlavə edirik
-            let subSubSelect = document.getElementById('subSubCategorySelect');
-            if (!subSubSelect) {
-                subSubSelect = document.createElement('select');
-                subSubSelect.id = 'subSubCategorySelect';
-                subSubSelect.className = subSelect.className;
-                subSubSelect.onchange = window.onSubSubCategoryChange;
-                subSelect.parentNode.insertBefore(subSubSelect, subSelect.nextSibling);
-            }
 
             mainSelect.innerHTML = '<option value="">Kateqoriyalar</option>';
             tabsContainer.innerHTML = '<button onclick="setCategoryTab(\'\')" class="cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25">Hamısı</button>';
@@ -276,7 +266,7 @@
             }
 
             updateSubCategoryDropdown('');
-            initModalCategorySelectors();
+            initModalMainCategoryDropdown();
         }
 
         window.onMainCategoryChange = function() {
@@ -284,17 +274,6 @@
             currentCategoryTab = mainCat;
             updateSubCategoryDropdown(mainCat, false);
             updateActiveTabUI(mainCat);
-            filterAds();
-        };
-
-        window.onSubCategoryChange = function() {
-            const mainCat = document.getElementById('mainCategorySelect').value;
-            const subCat = document.getElementById('subCategorySelect').value;
-            updateSubSubCategoryDropdown(mainCat, subCat, false);
-            filterAds();
-        };
-
-        window.onSubSubCategoryChange = function() {
             filterAds();
         };
 
@@ -311,72 +290,44 @@
             });
         }
 
-        function updateSubCategoryDropdown(selectedMainCat, keepSelection = false) {
+        function updateSubCategoryDropdown(selectedMainCat, keepSubCatSelection = false) {
             const subSelect = document.getElementById('subCategorySelect');
-            const prevSub = keepSelection ? subSelect.value : '';
+            const previousSubCat = keepSubCatSelection ? subSelect.value : '';
             
             subSelect.innerHTML = '<option value="">Alt Kateqoriyalar</option>';
-            const subSubSelect = document.getElementById('subSubCategorySelect');
-            if (subSubSelect) {
-                subSubSelect.innerHTML = '<option value="">Seçimlər</option>';
-            }
-
             const categoriesToProcess = selectedMainCat ? { [selectedMainCat]: categoriesData[selectedMainCat] } : categoriesData;
 
             for (const [catName, details] of Object.entries(categoriesToProcess)) {
-                for (const subGroup of Object.keys(details.sub)) {
-                    let opt = document.createElement('option');
-                    opt.value = subGroup;
-                    opt.text = subGroup;
-                    subSelect.appendChild(opt);
+                for (const [subGroup, items] of Object.entries(details.sub)) {
+                    let groupOpt = document.createElement('option');
+                    groupOpt.disabled = true;
+                    groupOpt.style.fontWeight = "bold";
+                    groupOpt.style.color = "#0f172a";
+                    groupOpt.style.backgroundColor = "#f1f5f9";
+                    groupOpt.text = subGroup;
+                    subSelect.appendChild(groupOpt);
+
+                    items.forEach(item => {
+                        const valueName = subGroup + " -> " + item;
+                        const count = ads.filter(ad => ad.subCategory === valueName).length;
+
+                        let opt = document.createElement('option');
+                        opt.value = valueName;
+                        opt.text = "\u00A0\u00A0\u00A0\u00A0  " + item + " (" + count + ")";
+                        subSelect.appendChild(opt);
+                    });
                 }
             }
 
-            if (keepSelection) {
-                subSelect.value = prevSub;
-            }
-            updateSubSubCategoryDropdown(selectedMainCat, subSelect.value, keepSelection);
-        }
-
-        function updateSubSubCategoryDropdown(selectedMainCat, selectedSubGroup, keepSelection = false) {
-            const subSubSelect = document.getElementById('subSubCategorySelect');
-            if (!subSubSelect) return;
-
-            const prevSubSub = keepSelection ? subSubSelect.value : '';
-            subSubSelect.innerHTML = '<option value="">Seçimlər</option>';
-
-            if (!selectedMainCat || !selectedSubGroup) return;
-
-            const details = categoriesData[selectedMainCat];
-            if (details && details.sub && details.sub[selectedSubGroup]) {
-                const items = details.sub[selectedSubGroup];
-                items.forEach(item => {
-                    let opt = document.createElement('option');
-                    opt.value = item;
-                    opt.text = item;
-                    subSubSelect.appendChild(opt);
-                });
-            }
-
-            if (keepSelection) {
-                subSubSelect.value = prevSubSub;
+            if (keepSubCatSelection) {
+                subSelect.value = previousSubCat;
             }
         }
 
-        function initModalCategorySelectors() {
+        function initModalMainCategoryDropdown() {
             const modalMainSelect = document.getElementById('modalMainCategory');
-            const modalSubSelect = document.getElementById('modalSubCategory');
-            
-            let modalSubSubSelect = document.getElementById('modalSubSubCategory');
-            if (!modalSubSubSelect) {
-                modalSubSubSelect = document.createElement('select');
-                modalSubSubSelect.id = 'modalSubSubCategory';
-                modalSubSubSelect.className = modalSubSelect.className;
-                modalSubSubSelect.onchange = window.onModalSubCategoryChange;
-                modalSubSelect.parentNode.insertBefore(modalSubSubSelect, modalSubSelect.nextSibling);
-            }
-
             modalMainSelect.innerHTML = '<option value="">Kateqoriya seçin...</option>';
+
             for (const catName of Object.keys(categoriesData)) {
                 let opt = document.createElement('option');
                 opt.value = catName;
@@ -388,39 +339,26 @@
         window.onModalMainCategoryChange = function() {
             const selectedMain = document.getElementById('modalMainCategory').value;
             const modalSubSelect = document.getElementById('modalSubCategory');
-            const modalSubSubSelect = document.getElementById('modalSubSubCategory');
             
-            modalSubSelect.innerHTML = '<option value="">Alt kateqoriya qrupu seçin...</option>';
-            if (modalSubSubSelect) modalSubSubSelect.innerHTML = '<option value="">Element seçin...</option>';
-
+            modalSubSelect.innerHTML = '<option value="">Alt kateqoriya seçin...</option>';
             if (!selectedMain || !categoriesData[selectedMain]) return;
 
             const details = categoriesData[selectedMain];
-            for (const subGroup of Object.keys(details.sub)) {
-                let opt = document.createElement('option');
-                opt.value = subGroup;
-                opt.text = subGroup;
-                modalSubSelect.appendChild(opt);
-            }
-        };
+            for (const [subGroup, items] of Object.entries(details.sub)) {
+                let groupOpt = document.createElement('option');
+                groupOpt.disabled = true;
+                groupOpt.style.fontWeight = "bold";
+                groupOpt.style.color = "#0f172a";
+                groupOpt.style.backgroundColor = "#f1f5f9";
+                groupOpt.text = subGroup;
+                modalSubSelect.appendChild(groupOpt);
 
-        window.onModalSubCategoryChange = function() {
-            const selectedMain = document.getElementById('modalMainCategory').value;
-            const selectedSub = document.getElementById('modalSubCategory').value;
-            const modalSubSubSelect = document.getElementById('modalSubSubCategory');
-
-            if (!modalSubSubSelect) return;
-            modalSubSubSelect.innerHTML = '<option value="">Element seçin...</option>';
-
-            if (!selectedMain || !selectedSub || !categoriesData[selectedMain]) return;
-
-            const details = categoriesData[selectedMain];
-            if (details.sub && details.sub[selectedSub]) {
-                details.sub[selectedSub].forEach(item => {
+                items.forEach(item => {
+                    const valueName = subGroup + " -> " + item;
                     let opt = document.createElement('option');
-                    opt.value = item;
-                    opt.text = item;
-                    modalSubSubSelect.appendChild(opt);
+                    opt.value = valueName;
+                    opt.text = "\u00A0\u00A0\u00A0\u00A0  " + item;
+                    modalSubSelect.appendChild(opt);
                 });
             }
         };
@@ -432,7 +370,7 @@
 
             if (user) {
                 addAdBtnContainer.innerHTML = `
-                    <button onclick="openAddModal()" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg shadow-primary/25 flex items-center space-x-2 transition transform active:scale-95 text-sm">
+                    <button onclick="openAddModal()" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg shadow-primary/30 flex items-center space-x-2 transition transform active:scale-95 text-sm">
                         <i class="fa-solid fa-plus"></i>
                         <span>Elan Yerləşdir</span>
                     </button>
@@ -594,6 +532,7 @@
             });
         }
 
+        
         function rotateBase64Image(base64Image, degrees, quality) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -621,6 +560,7 @@
 
         window.handleNewFiles = async function(input) {
 			if (input.files && input.files.length > 0) {
+				// Menyudan seçilmiş keyfiyyət dəyərini oxuyuruq (məsələn: 1, 0.90, 0.75 və s.)
 				const qualitySelect = document.getElementById('compressionQuality');
 				const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
 
@@ -631,6 +571,8 @@
 
 					try {
 						let finalBase64 = "";
+
+						// Əgər "Orijinal (1)" seçilibsə, heç bir sıxılma etmədən birbaşa oxuyuruq
 						if (quality === 1) {
 							finalBase64 = await new Promise((resolve, reject) => {
 								const reader = new FileReader();
@@ -639,6 +581,7 @@
 								reader.readAsDataURL(file);
 							});
 						} else if (typeof resizeAndConvertImage === 'function') {
+							// Seçilmiş keyfiyyəti sıxılma funksiyasına ötürürük
 							finalBase64 = await resizeAndConvertImage(file, quality);
 						}
 
@@ -657,82 +600,100 @@
 			}
 		};
 
+        
 		function renderEditingThumbnails() {
-            const container = document.getElementById('imagePreviewContainer');
-            const thumbs = document.getElementById('previewThumbnails');
-            thumbs.innerHTML = '';
-            container.style.display = 'block';
+		const container = document.getElementById('imagePreviewContainer');
+		const thumbs = document.getElementById('previewThumbnails');
+		thumbs.innerHTML = '';
 
-            currentEditingImages.forEach((imgObj, index) => {
-                const div = document.createElement('div');
-                div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
-                div.draggable = true;
-                div.dataset.index = index;
+		
+		container.style.display = 'block';
 
-                div.addEventListener('dragstart', handleDragStart);
-                div.addEventListener('dragover', handleDragOver);
-                div.addEventListener('drop', handleDrop);
-                div.addEventListener('dragend', handleDragEnd);
+		currentEditingImages.forEach((imgObj, index) => {
+        const div = document.createElement('div');
+        div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
+        div.draggable = true;
+        div.dataset.index = index;
 
-                div.innerHTML = `
-                    <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
-                    <button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900; -webkit-text-stroke: 0.8px #dc2626;" title="Sil">✕</button>
-                    <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
-                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
-                    </button>
-                    <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
-                        <i class="fa-solid fa-rotate-right text-[10px]"></i>
-                    </button>
-                `;
-                thumbs.appendChild(div);
-            });
+        // Drag & Drop hadisələri
+        div.addEventListener('dragstart', handleDragStart);
+        div.addEventListener('dragover', handleDragOver);
+        div.addEventListener('drop', handleDrop);
+        div.addEventListener('dragend', handleDragEnd);
+
+        div.innerHTML = `
+            <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
             
-            const addBtnDiv = document.createElement('div');
-            addBtnDiv.innerHTML = `
-                <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
-                    <i class="fa-solid fa-camera text-2xl mb-1"></i>
-                    <span class="text-[11px] font-bold">Şəkil əlavə et</span>
-                </label>
-            `;
-            thumbs.appendChild(addBtnDiv.firstElementChild);
-        }
+			
+			<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900; -webkit-text-stroke: 0.8px #dc2626;" title="Sil">
+				✕
+			</button>
+            
+            
+            <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
+                <i class="fa-solid fa-rotate-left text-[10px]"></i>
+            </button>
 
-        window.removeEditingImage = function(index) {
-            currentEditingImages.splice(index, 1);
-            renderEditingThumbnails();
-        };
+            
+            <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
+                <i class="fa-solid fa-rotate-right text-[10px]"></i>
+            </button>
+        `;
+        thumbs.appendChild(div);
+    });
 
-        window.rotateEditingImageLeft = function(index) {
-            currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
-            renderEditingThumbnails();
-        };
+    
+    const addBtnDiv = document.createElement('div');
+    addBtnDiv.innerHTML = `
+        <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
+            <i class="fa-solid fa-camera text-2xl mb-1"></i>
+            <span class="text-[11px] font-bold">Şəkil əlavə et</span>
+        </label>
+    `;
+    thumbs.appendChild(addBtnDiv.firstElementChild);
+}
 
-        window.rotateEditingImageRight = function(index) {
-            currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
-            renderEditingThumbnails();
-        };
+window.removeEditingImage = function(index) {
+    currentEditingImages.splice(index, 1);
+    renderEditingThumbnails();
+};
 
-        let draggedEditingIndex = null;
-        function handleDragStart(e) {
-            draggedEditingIndex = parseInt(this.dataset.index);
-            e.dataTransfer.effectAllowed = 'move';
-        }
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        }
-        function handleDrop(e) {
-            e.preventDefault();
-            const targetIndex = parseInt(this.dataset.index);
-            if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
-                const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
-                currentEditingImages.splice(targetIndex, 0, movedItem);
-                renderEditingThumbnails();
-            }
-        }
-        function handleDragEnd(e) {
-            draggedEditingIndex = null;
-        }
+window.rotateEditingImageLeft = function(index) {
+    currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
+    renderEditingThumbnails();
+};
+
+window.rotateEditingImageRight = function(index) {
+    currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
+    renderEditingThumbnails();
+};
+
+let draggedEditingIndex = null;
+
+function handleDragStart(e) {
+    draggedEditingIndex = parseInt(this.dataset.index);
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    const targetIndex = parseInt(this.dataset.index);
+    if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
+        const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
+        currentEditingImages.splice(targetIndex, 0, movedItem);
+        renderEditingThumbnails();
+    }
+}
+
+function handleDragEnd(e) {
+    draggedEditingIndex = null;
+}
+// -------------------------------------------------------------
 
         window.submitAd = async function(e) {
             e.preventDefault();
@@ -747,6 +708,7 @@
 
             const editingId = document.getElementById('editingAdId').value;
             
+            // Fırlatma dərəcələri tətbiq olunmuş şəkilləri son massivə yığırıq
             let finalImages = [];
             for (let imgObj of currentEditingImages) {
                 if (imgObj.rotation !== 0) {
@@ -762,12 +724,7 @@
             }
 
             const mainCategoryVal = document.getElementById('modalMainCategory').value;
-            const subCategoryGroup = document.getElementById('modalSubCategory').value;
-            const subCategoryItem = document.getElementById('modalSubSubCategory') ? document.getElementById('modalSubSubCategory').value : '';
-            
-            // Verilənlər bazasında köhnə struktur ilə tam uyğunluq üçün birləşdiririk
-            const subCategoryVal = (subCategoryGroup && subCategoryItem) ? (subCategoryGroup + " -> " + subCategoryItem) : (subCategoryGroup || subCategoryItem);
-
+            const subCategoryVal = document.getElementById('modalSubCategory').value;
             const rawPhoneInput = document.getElementById('adPhone').value;
             const finalPhone = cleanAndFormatPhone(rawPhoneInput);
             const isVipChecked = document.getElementById('adIsVip').checked;
@@ -858,17 +815,7 @@
             
             document.getElementById('modalMainCategory').value = ad.category || "";
             onModalMainCategoryChange();
-
-            if (ad.subCategory) {
-                const parts = ad.subCategory.split('->').map(s => s.trim());
-                if (parts.length === 2) {
-                    document.getElementById('modalSubCategory').value = parts[0];
-                    onModalSubCategoryChange();
-                    document.getElementById('modalSubSubCategory').value = parts[1];
-                } else {
-                    document.getElementById('modalSubCategory').value = ad.subCategory;
-                }
-            }
+            document.getElementById('modalSubCategory').value = ad.subCategory || "";
 
             document.getElementById('adPrice').value = ad.price;
             document.getElementById('adPhone').value = ad.phone || "+994 50 545 85 86";
@@ -885,29 +832,19 @@
         window.filterAds = function() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const selectedMainCat = document.getElementById('mainCategorySelect').value;
-            const selectedSubGroup = document.getElementById('subCategorySelect').value;
-            const selectedSubItem = document.getElementById('subSubCategorySelect') ? document.getElementById('subSubCategorySelect').value : '';
+            const selectedSubCat = document.getElementById('subCategorySelect').value;
             const sort = document.getElementById('sortSelect').value;
 
             let filtered = ads.filter(ad => {
                 let matchesSearch = ad.title.toLowerCase().includes(search) || ad.description.toLowerCase().includes(search);
                 let matchesCat = true;
 
-                if (selectedMainCat && ad.category !== selectedMainCat) {
-                    matchesCat = false;
+                if (selectedMainCat) {
+                    if (ad.category !== selectedMainCat) matchesCat = false;
                 }
 
-                if (selectedSubGroup) {
-                    if (!ad.subCategory || !ad.subCategory.startsWith(selectedSubGroup)) {
-                        matchesCat = false;
-                    }
-                }
-
-                if (selectedSubItem) {
-                    const expectedSub = selectedSubGroup + " -> " + selectedSubItem;
-                    if (ad.subCategory !== expectedSub) {
-                        matchesCat = false;
-                    }
+                if (selectedSubCat) {
+                    if (ad.subCategory !== selectedSubCat) matchesCat = false;
                 }
 
                 if (currentCategoryTab && ad.category !== currentCategoryTab) {
@@ -1002,4 +939,483 @@
                     card.innerHTML = `
                         <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
                             <img src="${mainImg}" class="w-full h-full object-cover">
-                            ${badgeHTML}${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (badgeHTML ? 'left-20' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> '
+                            ${badgeHTML}
+                            ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (badgeHTML ? 'left-20' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
+                            
+                            <span class="absolute bottom-3 right-3 ${condition === 'Yeni' ? 'bg-emerald-600' : 'bg-slate-700'} text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow">
+                                ${condition}
+                            </span>
+
+                            <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
+                                <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
+                            </div>
+                            <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
+                                <i class="fa-solid fa-heart ${isFav ? 'text-rose-500' : 'text-slate-400'}"></i>
+                            </button>
+                        </div>
+                        <div class="p-5 flex-grow flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
+                                    <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">${ad.category}</span>
+                                    <span class="text-[11px] font-bold text-slate-500 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
+                                </div>
+                                ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
+                                <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
+                                <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
+                                ${adminVipWarningHTML}
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-lg font-extrabold text-slate-900">${ad.price.toFixed(2)} AZN</span>
+                                <div class="flex items-center gap-2">
+                                    <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsgText)}" target="_blank" onclick="event.stopPropagation()" class="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm transition" title="WhatsApp">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                    </a>
+                                    <button onclick="openDetail('${ad.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Bax</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    gridEl.appendChild(card);
+                });
+            };
+
+            appendSection("VIP Elanlar", "fa-crown", vipAds, "vipGrid");
+            appendSection("Xüsusi Elanlar", "fa-thumbtack", pinnedAds, "pinnedGrid");
+            appendSection("Elanlar", "fa-rectangle-ad", normalAds, "normalGrid");
+        }
+
+        window.setCategoryTab = function(cat) {
+            currentCategoryTab = cat;
+            document.getElementById('mainCategorySelect').value = cat;
+            updateSubCategoryDropdown(cat, false);
+            updateActiveTabUI(cat);
+            if (cat === '') {
+                document.getElementById('sortSelect').value = 'newest';
+            }
+            filterAds();
+        };
+
+        window.openDetail = async function(id) {
+            const ad = ads.find(a => a.id === id);
+            if (!ad) return;
+
+            try {
+                const adRef = doc(db, "ads", id);
+                await updateDoc(adRef, { views: increment(1) });
+                ad.views = (ad.views || 0) + 1;
+            } catch (err) { console.error("View count update error:", err); }
+
+            const displayPhone = ad.phone || "+994 50 545 85 86";
+            const cleanPhone = displayPhone.replace(/[^0-9]/g, '');
+            const whatsappMsgText = "Salam, " + ad.title + " elanı ilə maraqlanıram, hələ satılmayıb?";
+            const whatsappUrl = "https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(whatsappMsgText);
+            const adSpecificUrl = window.location.origin + window.location.pathname + "?id=" + ad.id;
+            const condition = ad.condition || 'Yeni';
+
+            let imagesHTML = '';
+            if (ad.images && ad.images.length > 0) {
+                const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
+                let thumbsHTML = '';
+                if (ad.images.length > 1) {
+                    thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
+                    for (let idx = 0; idx < ad.images.length; idx++) {
+                        const img = ad.images[idx];
+                        thumbsHTML += `
+                            <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
+                                <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-cover">
+                            </div>
+                        `;
+                    }
+                    thumbsHTML += '</div>';
+                }
+
+                imagesHTML = `
+                    <div class="mb-6">
+                        <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
+                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
+                        </div>
+						<p class="text-[12px] text-center text-blue-600 mt-1 cursor-pointer -translate-y-2 hover:text-blue-800 hover:underline" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
+                        ${thumbsHTML}
+                    </div>
+                `;
+            }
+
+            const categoryText = ad.category + (ad.subCategory ? ' / ' + ad.subCategory.replace(' -> ', ' / ') : '');
+
+            const content = document.getElementById('detailContent');
+            content.innerHTML = `
+                ${imagesHTML}
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-full pr-2">
+                        <div style="font-size: 11px;" class="font-bold text-primary tracking-wide truncate mb-1 flex items-center gap-2">
+                            <span>${categoryText}</span>
+                            <span class="${condition === 'Yeni' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'} px-2 py-0.5 rounded text-[10px] font-bold">${condition}</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-900 mt-1 leading-snug">${ad.title}</h2>
+                        <div class="flex items-center gap-4 mt-2 flex-wrap">
+                            <span class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-location-dot text-rose-500"></i> Sumqayıt</span>
+                            <span class="text-xs text-slate-400"><i class="fa-solid fa-eye text-emerald-500"></i> Bu elana ${ad.views || 1} dəfə baxılıb</span>
+                            <span class="text-xs font-bold text-slate-700 tracking-wide"><i class="fa-solid fa-phone text-emerald-500 mr-0.5"></i> ${displayPhone}</span>
+                        </div>
+                    </div>
+                    <span class="text-2xl font-black text-slate-900 whitespace-nowrap ml-2">${ad.price.toFixed(2)} AZN</span>
+                </div>
+                <p class="text-slate-600 text-sm leading-relaxed mb-6 whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100">${ad.description}</p>
+                
+                <div class="flex items-center gap-2 mb-6 flex-wrap">
+                    <span class="text-xs font-semibold text-slate-400 mr-1">Paylaş:</span>
+                    <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(ad.title + ' - ' + adSpecificUrl)}" target="_blank" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                    <button onclick="navigator.clipboard.writeText('${adSpecificUrl}'); showToast('Elanın linki kopyalandı!');" class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> Elanın linkini kopyala
+                    </button>
+                    <button onclick='copyAdText(${JSON.stringify(ad.title)}, ${JSON.stringify(ad.description)}, ${JSON.stringify(ad.price.toLocaleString())}, ${JSON.stringify(displayPhone)})' class="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-lines"></i> Mətni kopyala
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-200 flex-wrap gap-4">
+                    <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                        <a href="tel:${displayPhone}" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-primary/30 transition">
+                            <i class="fa-solid fa-phone"></i>
+                            <span>Zəng et</span>
+                        </a>
+                        <a href="${whatsappUrl}" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold text-sm flex items-center space-x-2 transition">
+                            <i class="fa-brands fa-whatsapp text-lg"></i>
+                            <span>WhatsApp-a Yaz</span>
+                        </a>
+                    </div>
+                    ${currentUser ? `
+                        <div class="flex items-center space-x-2">
+                            <button onclick="editAd('${ad.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-xl font-semibold text-sm transition flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square"></i> Düzəliş et</button>
+                            <button onclick="deleteAd('${ad.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-3 rounded-xl font-semibold text-sm transition" title="Elanı sil"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            document.getElementById('detailModal').classList.remove('hidden');
+        };
+
+        window.closeDetailModal = () => document.getElementById('detailModal').classList.add('hidden');
+        
+        window.openImageModalWithList = function(imagesArray, index) {
+            activeFullscreenImages = imagesArray;
+            currentFullscreenIndex = index;
+            updateFullscreenImageView();
+            document.getElementById('imageModal').classList.remove('hidden');
+        };
+
+        function updateFullscreenImageView() {
+            const imgEl = document.getElementById('fullscreenImg');
+            const counterEl = document.getElementById('imageCounter');
+            if (activeFullscreenImages.length > 0) {
+                imgEl.src = activeFullscreenImages[currentFullscreenIndex];
+                counterEl.innerText = (currentFullscreenIndex + 1) + " / " + activeFullscreenImages.length;
+            }
+        }
+		
+		window.closeImageModal = function() {
+			document.getElementById('imageModal').classList.add('hidden');
+			resetImageZoom();
+		};
+		
+        //window.closeImageModal = () => document.getElementById('imageModal').classList.add('hidden');
+
+        window.openAddModal = () => {
+            if(!document.getElementById('editingAdId').value) {
+                document.getElementById('addAdForm').reset();
+                document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
+                document.getElementById('adPhone').value = "+994 50 545 85 86";
+                document.getElementById('modalTitleText').innerText = "Yeni Elan Yerləşdir (Admin)";
+                document.getElementById('adIsVip').checked = false;
+                document.getElementById('adIsPinned').checked = false;
+                document.getElementById('vipDurationContainer').classList.add('hidden');
+                document.querySelector('input[name="adCondition"][value="Yeni"]').checked = true;
+                currentEditingImages = [];
+                renderEditingThumbnails();
+            }
+            document.getElementById('addModal').classList.remove('hidden');
+        };
+
+        window.closeAddModal = () => {
+            document.getElementById('editingAdId').value = '';
+            currentEditingImages = [];
+            document.getElementById('addModal').classList.add('hidden');
+        };
+
+        window.openFavoritesModal = () => {
+            renderFavorites();
+            document.getElementById('favoritesModal').classList.remove('hidden');
+        };
+        window.closeFavoritesModal = () => document.getElementById('favoritesModal').classList.add('hidden');
+
+        window.toggleFavorite = function(id) {
+            const ad = ads.find(a => a.id === id);
+            if (!ad) return;
+            const index = favorites.findIndex(f => f.id === id);
+            if (index > -1) {
+                favorites.splice(index, 1);
+                showToast("Elan favoritlərdən çıxarıldı", 'info');
+            } else {
+                favorites.push(ad);
+                showToast("Elan favoritlərə əlavə olundu!");
+            }
+            localStorage.setItem('sumqayit_favs', JSON.stringify(favorites));
+            updateFavCount();
+            filterAds();
+        };
+
+        function updateFavCount() {
+            document.getElementById('favCount').innerText = favorites.length;
+        }
+
+        function renderFavorites() {
+            const list = document.getElementById('favoritesList');
+            list.innerHTML = '';
+            if (favorites.length === 0) {
+                list.innerHTML = '<p class="text-center text-slate-500 py-8">Seçilmiş elan yoxdur.</p>';
+                return;
+            }
+            favorites.forEach(ad => {
+                const mainImg = (ad.images && ad.images.length > 0) ? ad.images[0] : "https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80";
+                const priceVal = ad.price && typeof ad.price === 'object' && ad.price.price ? ad.price.price.toLocaleString() : Number(ad.price || 0).toLocaleString();
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="closeFavoritesModal(); openDetail('${ad.id}')">
+                        <div class="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+                            <img src="${mainImg}" class="max-w-full max-h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-900 line-clamp-1">${ad.title}</h4>
+                            <span class="text-xs font-bold text-slate-700">${priceVal} AZN</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleFavorite('${ad.id}'); renderFavorites();" class="text-rose-500 hover:text-rose-700 p-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        window.resetFilters = function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mainCategorySelect').value = '';
+            updateSubCategoryDropdown('', false);
+            document.getElementById('sortSelect').value = 'newest';
+            currentCategoryTab = '';
+            updateActiveTabUI('');
+            filterAds();
+        };
+
+        function checkUrlForAd() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const adId = urlParams.get('id');
+            if (adId) {
+                const timer = setInterval(() => {
+                    if (ads.length > 0) {
+                        clearInterval(timer);
+                        openDetail(adId);
+                    }
+                }, 200);
+            }
+        }
+
+        initCategorySelectors();
+        initStats();
+        listenToAds();
+        checkUrlForAd();
+		
+		window.resetAddAdForm = function() {
+			document.getElementById('addAdForm').reset();
+			document.getElementById('modalSubCategory').innerHTML = '<option value="">Əvvəl kateqoriya seçin...</option>';
+			document.getElementById('adPhone').value = "+994 50 545 85 86";
+			document.getElementById('adIsVip').checked = false;
+			document.getElementById('adIsPinned').checked = false;
+			document.getElementById('vipDurationContainer').classList.add('hidden');
+			const defaultCondition = document.querySelector('input[name="adCondition"][value="Yeni"]');
+			if (defaultCondition) defaultCondition.checked = true;
+			currentEditingImages = [];
+			renderEditingThumbnails();
+			checkResetButtonColor();
+			showToast("Forma sıfırlandı", "info");
+		};
+
+		function checkResetButtonColor() {
+			const resetBtn = document.getElementById('resetFormBtn');
+			if (!resetBtn) return;
+
+			const title = document.getElementById('adTitle').value.trim();
+			const mainCat = document.getElementById('modalMainCategory').value;
+			const subCat = document.getElementById('modalSubCategory').value;
+			const price = document.getElementById('adPrice').value.trim();
+			const description = document.getElementById('adDescription').value.trim();
+    
+			if (title || mainCat || subCat || price || description || (typeof currentEditingImages !== 'undefined' && currentEditingImages.length > 0)) {
+				// Dəyişiklik varsa: Qırmızı olsun və üzərinə gəldikdə tündləşsin
+				resetBtn.className = "text-red-500 hover:text-red-600 font-semibold transition text-sm cursor-pointer select-none";
+			} else {
+				// Heç nə yoxdursa: Boz olsun, hover (rəng dəyişməsi) TAMAMİLƏ SÖNÜк OLSUN
+				resetBtn.className = "text-slate-400 font-semibold transition text-sm cursor-pointer select-none";
+			}
+		}
+
+		
+		document.addEventListener('DOMContentLoaded', function() {
+			checkResetButtonColor();
+		});
+
+		
+		document.addEventListener('input', function(e) {
+			if (e.target.closest('#addAdForm')) {
+				checkResetButtonColor();
+			}
+		});
+
+		document.addEventListener('change', function(e) {
+			if (e.target.closest('#addAdForm')) {
+				checkResetButtonColor();
+			}
+		});
+		
+		document.addEventListener('keydown', function(e) {
+			const imageModal = document.getElementById('imageModal');
+			const detailModal = document.getElementById('detailModal');
+			
+			const isImageModalOpen = imageModal && !imageModal.classList.contains('hidden');
+			const isDetailModalOpen = detailModal && !detailModal.classList.contains('hidden');
+
+			if (e.key === 'Escape') {
+				// 1. Əgər tam ekran şəkil açıqdırsə, əvvəlcə onu bağla
+				if (isImageModalOpen) {
+					closeImageModal();
+				} 
+				// 2. Əgər şəkil bağlıdır, amma elan detalları açıqdırsə, onu bağla
+				else if (isDetailModalOpen) {
+					closeDetailModal();
+				}
+			} else if (isImageModalOpen) {
+				// Ox düymələri yalnız tam ekran şəkil açıq olduqda işləsin
+				if (e.key === 'ArrowRight') {
+					nextFullscreenImage();
+				} else if (e.key === 'ArrowLeft') {
+					prevFullscreenImage();
+				}
+			}
+		});
+		
+		
+		let isZoomed = false;
+		const scaleFactor = 2.5; // Yaxınlaşdırma miqyasını buradan tənzimləyə bilərsiniz
+
+		function resetImageZoom() {
+			isZoomed = false;
+			const imgEl = document.getElementById('fullscreenImg');
+			if (imgEl) {
+				imgEl.style.transform = 'translate(0px, 0px) scale(1)';
+				imgEl.style.cursor = 'zoom-in';
+				imgEl.style.transition = 'transform 0.3s ease'; 
+			}
+		}
+
+		window.updateFullscreenImageView = function() {
+			const imgEl = document.getElementById('fullscreenImg');
+			const counterEl = document.getElementById('imageCounter');
+			if (activeFullscreenImages.length > 0 && imgEl) {
+				imgEl.src = activeFullscreenImages[currentFullscreenIndex];
+				counterEl.innerText = (currentFullscreenIndex + 1) + " / " + activeFullscreenImages.length;
+				resetImageZoom();
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			const imgEl = document.getElementById('fullscreenImg');
+			const containerEl = imgEl ? imgEl.parentElement : null;
+			if (!imgEl || !containerEl) return;
+
+			imgEl.style.cursor = 'zoom-in';
+			containerEl.style.overflow = 'hidden';
+
+			
+			imgEl.addEventListener('click', function(e) {
+				e.stopPropagation();
+				isZoomed = !isZoomed;
+
+				if (isZoomed) {
+					imgEl.style.transition = 'transform 0.1s ease-out';
+					imgEl.style.cursor = 'zoom-out';
+
+					// Klik edilən an dərhal mərkəzə uyğun hesablanması üçün:
+					const containerRect = containerEl.getBoundingClientRect();
+					const imgRect = imgEl.getBoundingClientRect();
+
+					const centerX = containerRect.left + containerRect.width / 2;
+					const centerY = containerRect.top + containerRect.height / 2;
+
+					let moveX = (centerX - e.clientX) * (scaleFactor - 1);
+					let moveY = (centerY - e.clientY) * (scaleFactor - 1);
+
+					const maxX = (imgRect.width * scaleFactor - containerRect.width) / 2;
+					const maxY = (imgRect.height * scaleFactor - containerRect.height) / 2;
+
+					moveX = Math.max(-maxX, Math.min(maxX, moveX));
+					moveY = Math.max(-maxY, Math.min(maxY, moveY));
+
+					imgEl.style.transform = `translate(${moveX}px, ${moveY}px) scale(${scaleFactor})`;
+				} else {
+					resetImageZoom();
+				}
+			});
+
+			
+			imgEl.addEventListener('mousemove', function(e) {
+				if (!isZoomed) return;
+
+				const containerRect = containerEl.getBoundingClientRect();
+				const imgRect = imgEl.getBoundingClientRect();
+
+				const centerX = containerRect.left + containerRect.width / 2;
+				const centerY = containerRect.top + containerRect.height / 2;
+
+				let moveX = (centerX - e.clientX) * (scaleFactor - 1);
+				let moveY = (centerY - e.clientY) * (scaleFactor - 1);
+
+				const maxX = (imgRect.width * scaleFactor - containerRect.width) / 2;
+				const maxY = (imgRect.height * scaleFactor - containerRect.height) / 2;
+
+				moveX = Math.max(-maxX, Math.min(maxX, moveX));
+				moveY = Math.max(-maxY, Math.min(maxY, moveY));
+
+				imgEl.style.transform = `translate(${moveX}px, ${moveY}px) scale(${scaleFactor})`;
+			});
+
+			containerEl.addEventListener('mouseleave', function() {
+				if (isZoomed) {
+					 imgEl.style.transform = `translate(0px, 0px) scale(${scaleFactor})`;
+				}
+			});
+			
+			
+			const closeButtons = document.querySelectorAll('.close-modal, .fullscreen-close, [data-dismiss="modal"]');
+			closeButtons.forEach(btn => {
+				btn.addEventListener('click', () => {
+					resetImageZoom();
+				});
+			});
+		});
+
+		window.nextFullscreenImage = function() {
+			if (activeFullscreenImages.length > 1) {
+				currentFullscreenIndex = (currentFullscreenIndex + 1) % activeFullscreenImages.length;
+				updateFullscreenImageView();
+				resetImageZoom();
+			}
+		};
+
+		window.prevFullscreenImage = function() {
+			if (activeFullscreenImages.length > 1) {
+				currentFullscreenIndex = (currentFullscreenIndex - 1 + activeFullscreenImages.length) % activeFullscreenImages.length;
+				updateFullscreenImageView();
+				resetImageZoom();
+			}
+		};
