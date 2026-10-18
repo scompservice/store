@@ -1,4 +1,4 @@
-		import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
@@ -39,7 +39,7 @@
                 icon: "fa-laptop",
                 sub: {
                     "Audio və video": ["Audio aksesuarlar", "Mikrofonlar", "Qulaqlıqlar", "Digər"],
-                    "Kompüter aksesuarları": ["Laptop Adapters & Power Supplies", "Klaviaturalar və kompüter siçanları", "PC Component Power & Data Cables", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "Video Cables, Adapters & Converters", "Other Cables, Adapters & Converters", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "USB Hubs & Splitters", "Digər"],
+                    "Kompüter aksesuarları": ["Laptop Adapters & Power Supplies", "Klaviaturalar və kompüter siçanları", "PC Component Power & Data Cables", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "Video Cables, Adapters & Converters", "Other Cables, Adapters & Connectors", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "USB Hubs & Splitters", "Digər"],
                     "Oyunlar, pultlar və proqramlar": ["Proqramlar"],
                     "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları", "Sərt disklər (HDD, SSD)", "Video kartlar", "Digər"],
                     "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarlar", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk korpusları"],
@@ -73,12 +73,12 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
-        let currentEditingImages = []; // Hər element: { src, rotation }
+        let currentEditingImages = []; 
 
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
+        let selectedSubCategoryValue = '';
 
-        
         window.runAdminMigration = async function() {
             if (!currentUser) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
@@ -217,11 +217,95 @@
                 showToast('Elan mətni kopyalandı!');
             });
         };
+		
+		// Əsas kateqoriya menyusunun açılıb-bağlanması
+        window.toggleMainCatMenu = function() {
+            const list = document.getElementById('mainCategoryDropdownList');
+            const subList = document.getElementById('customSubCatList');
+            const sortList = document.getElementById('sortDropdownList');
+            
+            // Digərlərini bağla
+            if (subList) subList.classList.add('hidden');
+            if (sortList) sortList.classList.add('hidden');
+
+            if (list) list.classList.toggle('hidden');
+        };
+
+        // Sıralama menyusunun açılıb-bağlanması
+        window.toggleSortMenu = function() {
+            const list = document.getElementById('sortDropdownList');
+            const mainList = document.getElementById('mainCategoryDropdownList');
+            const subList = document.getElementById('customSubCatList');
+
+            // Digərlərini bağla
+            if (mainList) mainList.classList.add('hidden');
+            if (subList) subList.classList.add('hidden');
+
+            if (list) list.classList.toggle('hidden');
+        };
+
+        window.toggleCustomSubCatMenu = function() {
+            const mainSelect = document.getElementById('mainCategorySelect');
+            if (mainSelect && !mainSelect.value) return;
+
+            const list = document.getElementById('customSubCatList');
+            const mainList = document.getElementById('mainCategoryDropdownList');
+            const sortList = document.getElementById('sortDropdownList');
+
+            // Digərlərini bağla
+            if (mainList) mainList.classList.add('hidden');
+            if (sortList) sortList.classList.add('hidden');
+
+            if (list) list.classList.toggle('hidden');
+        };
+
+        window.selectMainCatOption = function(val, text) {
+            document.getElementById('mainCategorySelectedText').innerText = text;
+            document.getElementById('mainCategorySelect').value = val;
+            const list = document.getElementById('mainCategoryDropdownList');
+            if (list) list.classList.add('hidden');
+            onMainCategoryChange();
+        };
+
+        window.selectSortOption = function(val, text) {
+            document.getElementById('sortSelectedText').innerText = text;
+            document.getElementById('sortSelect').value = val;
+            const list = document.getElementById('sortDropdownList');
+            if (list) list.classList.add('hidden');
+            filterAds();
+        };
 
         window.addEventListener('click', function(e) {
             const container = document.getElementById('siteShareDropdown');
             if (container && !e.target.closest('button[onclick="toggleSiteShareMenu()"]') && !container.contains(e.target)) {
                 container.classList.add('hidden');
+            }
+
+            // Alt kateqoriya menyusu
+            const customDropdown = document.getElementById('customSubCatList');
+            const customToggleBtn = document.querySelector('[onclick="toggleCustomSubCatMenu()"]');
+            if (customDropdown && !customDropdown.classList.contains('hidden')) {
+                if (!customDropdown.contains(e.target) && (!customToggleBtn || !customToggleBtn.contains(e.target))) {
+                    customDropdown.classList.add('hidden');
+                }
+            }
+
+            // Əsas kateqoriya menyusu
+            const mainDropdownList = document.getElementById('mainCategoryDropdownList');
+            const mainToggleBtn = document.querySelector('[onclick="toggleMainCatMenu()"]');
+            if (mainDropdownList && !mainDropdownList.classList.contains('hidden')) {
+                if (!mainDropdownList.contains(e.target) && (!mainToggleBtn || !mainToggleBtn.contains(e.target))) {
+                    mainDropdownList.classList.add('hidden');
+                }
+            }
+
+            // Sıralama menyusu
+            const sortDropdownList = document.getElementById('sortDropdownList');
+            const sortToggleBtn = document.querySelector('[onclick="toggleSortMenu()"]');
+            if (sortDropdownList && !sortDropdownList.classList.contains('hidden')) {
+                if (!sortDropdownList.contains(e.target) && (!sortToggleBtn || !sortToggleBtn.contains(e.target))) {
+                    sortDropdownList.classList.add('hidden');
+                }
             }
         });
 
@@ -247,32 +331,49 @@
 
         function initCategorySelectors() {
             const mainSelect = document.getElementById('mainCategorySelect');
+            const mainDropdownList = document.getElementById('mainCategoryDropdownList');
             const tabsContainer = document.getElementById('categoryTabsContainer');
 
-            mainSelect.innerHTML = '<option value="">Kateqoriyalar</option>';
-            tabsContainer.innerHTML = '<button onclick="setCategoryTab(\'\')" class="cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25">Hamısı</button>';
+            if (mainSelect && mainDropdownList) {
+                mainSelect.innerHTML = '<option value="">Kateqoriyalar</option>';
+                // Varsayılan başlık seçeneğindeki py-2.5 değerini py-1.5 yaptık:
+                mainDropdownList.innerHTML = '<div onclick="selectMainCatOption(\'\', \'Kateqoriyalar\')" class="px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer transition">Bütün kateqoriyalar</div>';
+                
+                for (const catName of Object.keys(categoriesData)) {
+                    let mainOpt = document.createElement('option');
+                    mainOpt.value = catName;
+                    mainOpt.text = catName;
+                    mainSelect.appendChild(mainOpt);
 
-            for (const [catName, details] of Object.entries(categoriesData)) {
-                let mainOpt = document.createElement('option');
-                mainOpt.value = catName;
-                mainOpt.text = catName;
-                mainSelect.appendChild(mainOpt);
-
-                tabsContainer.innerHTML += `
-                    <button onclick="setCategoryTab('${catName}')" class="cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2" data-cat="${catName}">
-                        <i class="fa-solid ${details.icon}"></i> ${catName}
-                    </button>
-                `;
+                    let divItem = document.createElement('div');
+                    // Buradaki py-3 değerini py-1.5 (veya py-1) yaparak dikey mesafeyi daralttık:
+                    divItem.className = "px-4 py-1.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition";
+                    divItem.innerText = catName;
+                    divItem.onclick = () => selectMainCatOption(catName, catName);
+                    mainDropdownList.appendChild(divItem);
+                }
             }
 
-            updateSubCategoryDropdown('');
+            if (tabsContainer) {
+                tabsContainer.innerHTML = '<button onclick="setCategoryTab(\'\')" class="cat-tab active px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-primary text-white shadow-md shadow-primary/25">Hamısı</button>';
+                for (const [catName, details] of Object.entries(categoriesData)) {
+                    tabsContainer.innerHTML += `
+                        <button onclick="setCategoryTab('${catName}')" class="cat-tab px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 flex items-center gap-2" data-cat="${catName}">
+                            <i class="fa-solid ${details.icon}"></i> ${catName}
+                        </button>
+                    `;
+                }
+            }
+
+            buildCustomAccordionDropdown('');
             initModalMainCategoryDropdown();
         }
 
         window.onMainCategoryChange = function() {
             const mainCat = document.getElementById('mainCategorySelect').value;
             currentCategoryTab = mainCat;
-            updateSubCategoryDropdown(mainCat, false);
+            selectedSubCategoryValue = '';
+            buildCustomAccordionDropdown(mainCat);
             updateActiveTabUI(mainCat);
             filterAds();
         };
@@ -290,42 +391,102 @@
             });
         }
 
-        function updateSubCategoryDropdown(selectedMainCat, keepSubCatSelection = false) {
-            const subSelect = document.getElementById('subCategorySelect');
-            const previousSubCat = keepSubCatSelection ? subSelect.value : '';
+        function buildCustomAccordionDropdown(selectedMainCat) {
+			const buttonText = selectedSubCategoryValue ? selectedSubCategoryValue.replace(' -> ', ' / ') : 'Alt Kateqoriyalar';
+			const subCategorySelectedText = document.getElementById('subCategorySelectedText');
+			if (subCategorySelectedText) {
+				subCategorySelectedText.innerText = buttonText;
+			}
+
+			const groupsContainer = document.getElementById('accordionGroupsContainer');
+			if (!groupsContainer) return;
+			groupsContainer.innerHTML = '';
+
+			const categoriesToProcess = selectedMainCat ? { [selectedMainCat]: categoriesData[selectedMainCat] } : categoriesData;
+
+			for (const [catName, details] of Object.entries(categoriesToProcess)) {
+				if (!details || !details.sub) continue;
+				for (const [subGroup, items] of Object.entries(details.sub)) {
+					const groupDiv = document.createElement('div');
+					groupDiv.className = "border border-slate-100 rounded-lg overflow-hidden bg-slate-50/50";
+					
+					const groupId = 'group_' + subGroup.replace(/[^a-zA-Z0-9]/g, '_');
+					const isOpen = (typeof activeAccordionGroupId !== 'undefined' && activeAccordionGroupId === groupId);
+					
+					groupDiv.innerHTML = `
+						<div onclick="toggleAccordionGroup('${groupId}')" class="px-3 py-2.5 text-sm text-slate-800 hover:bg-slate-100 cursor-pointer flex items-center justify-between select-none">
+							<span>${subGroup}</span>
+							<i id="icon_${groupId}" class="fa-solid ${isOpen ? 'fa-chevron-down text-primary' : 'fa-chevron-right text-slate-400'} text-[10px] transition-transform duration-200"></i>
+						</div>
+						<div id="${groupId}" class="${isOpen ? '' : 'hidden'} pl-3 pr-2 py-1 space-y-1 bg-white border-t border-slate-100"></div>
+					`;
+
+					const itemsContainer = groupDiv.querySelector('#' + groupId);
+					items.forEach(item => {
+						const valueName = subGroup + " -> " + item;
+						const count = ads.filter(ad => ad.subCategory === valueName).length;
+						const isSelected = selectedSubCategoryValue === valueName ? 'bg-primary text-white font-bold' : 'text-slate-600 hover:bg-slate-100';
+
+						const itemDiv = document.createElement('div');
+						itemDiv.className = `px-2.5 py-1.5 rounded-lg text-sm cursor-pointer transition flex items-center justify-between ${isSelected}`;
+						itemDiv.innerHTML = `<span>${item}</span> <span class="opacity-70 text-[10px]">(${count})</span>`;
+						itemDiv.onclick = (e) => {
+							e.stopPropagation();
+							selectSubCat(valueName);
+						};
+						itemsContainer.appendChild(itemDiv);
+					});
+
+					groupsContainer.appendChild(groupDiv);
+				}
+			}
+		}
+		
+		window.toggleAccordionGroup = function(groupId) {
+			const itemsEl = document.getElementById(groupId);
+			const iconEl = document.getElementById('icon_' + groupId);
+			
+			if (itemsEl) {
+				const isOpen = !itemsEl.classList.contains('hidden');
+
+				// Bütün qrupları bağla və ox işarələrini sıfırla
+				document.querySelectorAll('[id^="group_"]').forEach(el => {
+					if (el.id !== groupId) {
+						el.classList.add('hidden');
+						const otherIcon = document.getElementById('icon_' + el.id);
+						if (otherIcon) {
+							otherIcon.className = "fa-solid fa-chevron-right text-[10px] text-slate-400 transition-transform duration-200";
+						}
+					}
+				});
+
+				// Kliklənən qrupun vəziyyətini dəyiş (açıqdısa bağla, bağlıdısa aç)
+				if (isOpen) {
+					itemsEl.classList.add('hidden');
+					iconEl.className = "fa-solid fa-chevron-right text-[10px] text-slate-400 transition-transform duration-200";
+				} else {
+					itemsEl.classList.remove('hidden');
+					iconEl.className = "fa-solid fa-chevron-down text-[10px] text-primary transition-transform duration-200";
+				}
+			}
+		};
+
+        window.selectSubCat = function(val) {
+            selectedSubCategoryValue = val;
+            const subSelectEl = document.getElementById('subCategorySelect');
+            if (subSelectEl) subSelectEl.value = val;
             
-            subSelect.innerHTML = '<option value="">Alt Kateqoriyalar</option>';
-            const categoriesToProcess = selectedMainCat ? { [selectedMainCat]: categoriesData[selectedMainCat] } : categoriesData;
+            const list = document.getElementById('customSubCatList');
+            if (list) list.classList.add('hidden');
 
-            for (const [catName, details] of Object.entries(categoriesToProcess)) {
-                for (const [subGroup, items] of Object.entries(details.sub)) {
-                    let groupOpt = document.createElement('option');
-                    groupOpt.disabled = true;
-                    groupOpt.style.fontWeight = "bold";
-                    groupOpt.style.color = "#0f172a";
-                    groupOpt.style.backgroundColor = "#f1f5f9";
-                    groupOpt.text = subGroup;
-                    subSelect.appendChild(groupOpt);
-
-                    items.forEach(item => {
-                        const valueName = subGroup + " -> " + item;
-                        const count = ads.filter(ad => ad.subCategory === valueName).length;
-
-                        let opt = document.createElement('option');
-                        opt.value = valueName;
-                        opt.text = "\u00A0\u00A0\u00A0\u00A0  " + item + " (" + count + ")";
-                        subSelect.appendChild(opt);
-                    });
-                }
-            }
-
-            if (keepSubCatSelection) {
-                subSelect.value = previousSubCat;
-            }
-        }
+            const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+            buildCustomAccordionDropdown(currentMainCat);
+            filterAds();
+        };
 
         function initModalMainCategoryDropdown() {
             const modalMainSelect = document.getElementById('modalMainCategory');
+            if (!modalMainSelect) return;
             modalMainSelect.innerHTML = '<option value="">Kateqoriya seçin...</option>';
 
             for (const catName of Object.keys(categoriesData)) {
@@ -339,6 +500,7 @@
         window.onModalMainCategoryChange = function() {
             const selectedMain = document.getElementById('modalMainCategory').value;
             const modalSubSelect = document.getElementById('modalSubCategory');
+            if (!modalSubSelect) return;
             
             modalSubSelect.innerHTML = '<option value="">Alt kateqoriya seçin...</option>';
             if (!selectedMain || !categoriesData[selectedMain]) return;
@@ -369,28 +531,34 @@
             const addAdBtnContainer = document.getElementById('addAdBtnContainer');
 
             if (user) {
-                addAdBtnContainer.innerHTML = `
-                    <button onclick="openAddModal()" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg shadow-primary/30 flex items-center space-x-2 transition transform active:scale-95 text-sm">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Elan Yerləşdir</span>
-                    </button>
-                `;
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <img src="${user.photoURL || 'https://via.placeholder.com/40'}" class="w-8 h-8 rounded-full border border-primary" title="${user.email}">
-                        <button onclick="logoutGoogle()" class="p-2.5 rounded-xl border border-rose-200 hover:bg-rose-50 text-rose-600 transition text-xs font-semibold" title="Çıxış et">
-                            <i class="fa-solid fa-right-from-bracket"></i>
+                if (addAdBtnContainer) {
+                    addAdBtnContainer.innerHTML = `
+                        <button onclick="openAddModal()" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg shadow-primary/25 flex items-center space-x-2 transition transform active:scale-95 text-sm">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Elan Yerləşdir</span>
                         </button>
-                    </div>
-                `;
+                    `;
+                }
+                if (authSection) {
+                    authSection.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <img src="${user.photoURL || 'https://via.placeholder.com/40'}" class="w-8 h-8 rounded-full border border-primary" title="${user.email}">
+                            <button onclick="logoutGoogle()" class="p-2.5 rounded-xl border border-rose-200 hover:bg-rose-50 text-rose-600 transition text-xs font-semibold" title="Çıxış et">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+                    `;
+                }
             } else {
-                addAdBtnContainer.innerHTML = '';
-                authSection.innerHTML = `
-                    <button onclick="loginWithGoogle()" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 transition flex items-center space-x-2 text-xs font-semibold" title="Google ilə Admin Girişi">
-                        <i class="fa-brands fa-google text-red-500"></i>
-                        <span class="hidden sm:inline">Admin Girişi</span>
-                    </button>
-                `;
+                if (addAdBtnContainer) addAdBtnContainer.innerHTML = '';
+                if (authSection) {
+                    authSection.innerHTML = `
+                        <button onclick="loginWithGoogle()" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 transition flex items-center space-x-2 text-xs font-semibold" title="Google ilə Admin Girişi">
+                            <i class="fa-brands fa-google text-red-500"></i>
+                            <span class="hidden sm:inline">Admin Girişi</span>
+                        </button>
+                    `;
+                }
             }
             filterAds();
         });
@@ -429,7 +597,8 @@
                 }
 
                 const updatedStats = await getDoc(statsRef);
-                document.getElementById('totalViewsCount').innerText = updatedStats.exists() ? (updatedStats.data().totalViews || 1) : 1;
+                const viewsEl = document.getElementById('totalViewsCount');
+                if (viewsEl) viewsEl.innerText = updatedStats.exists() ? (updatedStats.data().totalViews || 1) : 1;
 
                 const sessionId = 'user_' + Math.random().toString(36).substring(2, 9);
                 const userPresenceRef = doc(db, "active_sessions", sessionId);
@@ -450,7 +619,8 @@
                         const data = docSnap.data();
                         if (now - data.lastSeen < 25000) activeCount++;
                     });
-                    document.getElementById('activeUsersCount').innerText = Math.max(1, activeCount);
+                    const activeEl = document.getElementById('activeUsersCount');
+                    if (activeEl) activeEl.innerText = Math.max(1, activeCount);
                 });
             } catch (e) {
                 console.error("Stats error:", e);
@@ -483,9 +653,10 @@
                     ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
                 }
                 
-                document.getElementById('totalAdsCount').innerText = ads.length;
-                const currentMainCat = document.getElementById('mainCategorySelect').value;
-                updateSubCategoryDropdown(currentMainCat, true);
+                const totalAdsEl = document.getElementById('totalAdsCount');
+                if (totalAdsEl) totalAdsEl.innerText = ads.length;
+                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+                buildCustomAccordionDropdown(currentMainCat);
 
                 filterAds();
                 updateFavCount();
@@ -532,7 +703,6 @@
             });
         }
 
-        
         function rotateBase64Image(base64Image, degrees, quality) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -560,7 +730,6 @@
 
         window.handleNewFiles = async function(input) {
 			if (input.files && input.files.length > 0) {
-				// Menyudan seçilmiş keyfiyyət dəyərini oxuyuruq (məsələn: 1, 0.90, 0.75 və s.)
 				const qualitySelect = document.getElementById('compressionQuality');
 				const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
 
@@ -571,8 +740,6 @@
 
 					try {
 						let finalBase64 = "";
-
-						// Əgər "Orijinal (1)" seçilibsə, heç bir sıxılma etmədən birbaşa oxuyuruq
 						if (quality === 1) {
 							finalBase64 = await new Promise((resolve, reject) => {
 								const reader = new FileReader();
@@ -581,7 +748,6 @@
 								reader.readAsDataURL(file);
 							});
 						} else if (typeof resizeAndConvertImage === 'function') {
-							// Seçilmiş keyfiyyəti sıxılma funksiyasına ötürürük
 							finalBase64 = await resizeAndConvertImage(file, quality);
 						}
 
@@ -600,100 +766,83 @@
 			}
 		};
 
-        
 		function renderEditingThumbnails() {
-		const container = document.getElementById('imagePreviewContainer');
-		const thumbs = document.getElementById('previewThumbnails');
-		thumbs.innerHTML = '';
+            const container = document.getElementById('imagePreviewContainer');
+            const thumbs = document.getElementById('previewThumbnails');
+            if (!thumbs || !container) return;
+            thumbs.innerHTML = '';
+            container.style.display = 'block';
 
-		
-		container.style.display = 'block';
+            currentEditingImages.forEach((imgObj, index) => {
+                const div = document.createElement('div');
+                div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
+                div.draggable = true;
+                div.dataset.index = index;
 
-		currentEditingImages.forEach((imgObj, index) => {
-        const div = document.createElement('div');
-        div.className = "relative w-24 h-24 rounded-2xl overflow-hidden border border-slate-300 bg-white flex-shrink-0 cursor-move select-none group shadow-sm flex items-center justify-center";
-        div.draggable = true;
-        div.dataset.index = index;
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
 
-        // Drag & Drop hadisələri
-        div.addEventListener('dragstart', handleDragStart);
-        div.addEventListener('dragover', handleDragOver);
-        div.addEventListener('drop', handleDrop);
-        div.addEventListener('dragend', handleDragEnd);
-
-        div.innerHTML = `
-            <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
+                div.innerHTML = `
+                    <img src="${imgObj.src}" style="transform: rotate(${imgObj.rotation}deg);" class="w-full h-full object-cover transition-transform duration-200 pointer-events-none">
+                    <button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900; -webkit-text-stroke: 0.8px #dc2626;" title="Sil">✕</button>
+                    <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
+                        <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                    </button>
+                    <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
+                        <i class="fa-solid fa-rotate-right text-[10px]"></i>
+                    </button>
+                `;
+                thumbs.appendChild(div);
+            });
             
-			
-			<button type="button" onclick="removeEditingImage(${index})" class="absolute top-1.5 right-1.5 w-5 h-5 bg-white hover:bg-gray-100 text-red-600 rounded-full flex items-center justify-center text-xs font-black shadow transition z-10 leading-none" style="font-weight: 900; -webkit-text-stroke: 0.8px #dc2626;" title="Sil">
-				✕
-			</button>
-            
-            
-            <button type="button" onclick="rotateEditingImageLeft(${index})" class="absolute bottom-1 left-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sola fırlat">
-                <i class="fa-solid fa-rotate-left text-[10px]"></i>
-            </button>
+            const addBtnDiv = document.createElement('div');
+            addBtnDiv.innerHTML = `
+                <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
+                    <i class="fa-solid fa-camera text-2xl mb-1"></i>
+                    <span class="text-[11px] font-bold">Şəkil əlavə et</span>
+                </label>
+            `;
+            thumbs.appendChild(addBtnDiv.firstElementChild);
+        }
 
-            
-            <button type="button" onclick="rotateEditingImageRight(${index})" class="absolute bottom-1 right-1 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow transition z-10" title="Sağa fırlat">
-                <i class="fa-solid fa-rotate-right text-[10px]"></i>
-            </button>
-        `;
-        thumbs.appendChild(div);
-    });
+        window.removeEditingImage = function(index) {
+            currentEditingImages.splice(index, 1);
+            renderEditingThumbnails();
+        };
 
-    
-    const addBtnDiv = document.createElement('div');
-    addBtnDiv.innerHTML = `
-        <label for="adImageFiles" class="w-24 h-24 border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-all rounded-2xl text-slate-500 flex-shrink-0">
-            <i class="fa-solid fa-camera text-2xl mb-1"></i>
-            <span class="text-[11px] font-bold">Şəkil əlavə et</span>
-        </label>
-    `;
-    thumbs.appendChild(addBtnDiv.firstElementChild);
-}
+        window.rotateEditingImageLeft = function(index) {
+            currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
+            renderEditingThumbnails();
+        };
 
-window.removeEditingImage = function(index) {
-    currentEditingImages.splice(index, 1);
-    renderEditingThumbnails();
-};
+        window.rotateEditingImageRight = function(index) {
+            currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
+            renderEditingThumbnails();
+        };
 
-window.rotateEditingImageLeft = function(index) {
-    currentEditingImages[index].rotation = (currentEditingImages[index].rotation - 90) % 360;
-    renderEditingThumbnails();
-};
-
-window.rotateEditingImageRight = function(index) {
-    currentEditingImages[index].rotation = (currentEditingImages[index].rotation + 90) % 360;
-    renderEditingThumbnails();
-};
-
-let draggedEditingIndex = null;
-
-function handleDragStart(e) {
-    draggedEditingIndex = parseInt(this.dataset.index);
-    e.dataTransfer.effectAllowed = 'move';
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    const targetIndex = parseInt(this.dataset.index);
-    if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
-        const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
-        currentEditingImages.splice(targetIndex, 0, movedItem);
-        renderEditingThumbnails();
-    }
-}
-
-function handleDragEnd(e) {
-    draggedEditingIndex = null;
-}
-// -------------------------------------------------------------
+        let draggedEditingIndex = null;
+        function handleDragStart(e) {
+            draggedEditingIndex = parseInt(this.dataset.index);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetIndex = parseInt(this.dataset.index);
+            if (draggedEditingIndex !== null && draggedEditingIndex !== targetIndex) {
+                const movedItem = currentEditingImages.splice(draggedEditingIndex, 1)[0];
+                currentEditingImages.splice(targetIndex, 0, movedItem);
+                renderEditingThumbnails();
+            }
+        }
+        function handleDragEnd(e) {
+            draggedEditingIndex = null;
+        }
 
         window.submitAd = async function(e) {
             e.preventDefault();
@@ -708,7 +857,6 @@ function handleDragEnd(e) {
 
             const editingId = document.getElementById('editingAdId').value;
             
-            // Fırlatma dərəcələri tətbiq olunmuş şəkilləri son massivə yığırıq
             let finalImages = [];
             for (let imgObj of currentEditingImages) {
                 if (imgObj.rotation !== 0) {
@@ -832,7 +980,7 @@ function handleDragEnd(e) {
         window.filterAds = function() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const selectedMainCat = document.getElementById('mainCategorySelect').value;
-            const selectedSubCat = document.getElementById('subCategorySelect').value;
+            const selectedSubCat = selectedSubCategoryValue;
             const sort = document.getElementById('sortSelect').value;
 
             let filtered = ads.filter(ad => {
@@ -866,6 +1014,7 @@ function handleDragEnd(e) {
         function renderAds(list) {
             const container = document.getElementById('listingsContainer');
             const empty = document.getElementById('emptyState');
+            if (!container || !empty) return;
             container.innerHTML = '';
 
             if (list.length === 0) {
@@ -985,15 +1134,26 @@ function handleDragEnd(e) {
         }
 
         window.setCategoryTab = function(cat) {
-            currentCategoryTab = cat;
-            document.getElementById('mainCategorySelect').value = cat;
-            updateSubCategoryDropdown(cat, false);
-            updateActiveTabUI(cat);
-            if (cat === '') {
-                document.getElementById('sortSelect').value = 'newest';
-            }
-            filterAds();
-        };
+			currentCategoryTab = cat;
+			document.getElementById('mainCategorySelect').value = cat;
+			const catNameText = cat ? cat : "Kateqoriyalar";
+			const selectedTextEl = document.getElementById('mainCategorySelectedText');
+			if (selectedTextEl) selectedTextEl.innerText = catNameText;
+
+			// Alt kateqoriyanı sıfırlamaq üçün əlavələr:
+			selectedSubCategoryValue = '';
+			const subCatSelectedText = document.getElementById('subCategorySelectedText');
+			if (subCatSelectedText) subCatSelectedText.innerText = "Alt Kateqoriyalar";
+
+			buildCustomAccordionDropdown(cat);
+			updateActiveTabUI(cat);
+			if (cat === '') {
+				document.getElementById('sortSelect').value = 'newest';
+				const sortSelectedText = document.getElementById('sortSelectedText');
+				if (sortSelectedText) sortSelectedText.innerText = "Ən yenilər";
+			}
+			filterAds();
+		};
 
         window.openDetail = async function(id) {
             const ad = ads.find(a => a.id === id);
@@ -1077,7 +1237,7 @@ function handleDragEnd(e) {
 
                 <div class="flex items-center justify-between pt-4 border-t border-slate-200 flex-wrap gap-4">
                     <div class="flex items-center space-x-3 flex-wrap gap-y-2">
-                        <a href="tel:${displayPhone}" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-primary/30 transition">
+                        <a href="tel:${displayPhone}" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-primary/25 transition">
                             <i class="fa-solid fa-phone"></i>
                             <span>Zəng et</span>
                         </a>
@@ -1109,7 +1269,7 @@ function handleDragEnd(e) {
         function updateFullscreenImageView() {
             const imgEl = document.getElementById('fullscreenImg');
             const counterEl = document.getElementById('imageCounter');
-            if (activeFullscreenImages.length > 0) {
+            if (activeFullscreenImages.length > 0 && imgEl && counterEl) {
                 imgEl.src = activeFullscreenImages[currentFullscreenIndex];
                 counterEl.innerText = (currentFullscreenIndex + 1) + " / " + activeFullscreenImages.length;
             }
@@ -1119,8 +1279,6 @@ function handleDragEnd(e) {
 			document.getElementById('imageModal').classList.add('hidden');
 			resetImageZoom();
 		};
-		
-        //window.closeImageModal = () => document.getElementById('imageModal').classList.add('hidden');
 
         window.openAddModal = () => {
             if(!document.getElementById('editingAdId').value) {
@@ -1167,11 +1325,13 @@ function handleDragEnd(e) {
         };
 
         function updateFavCount() {
-            document.getElementById('favCount').innerText = favorites.length;
+            const favCountEl = document.getElementById('favCount');
+            if (favCountEl) favCountEl.innerText = favorites.length;
         }
 
         function renderFavorites() {
             const list = document.getElementById('favoritesList');
+            if (!list) return;
             list.innerHTML = '';
             if (favorites.length === 0) {
                 list.innerHTML = '<p class="text-center text-slate-500 py-8">Seçilmiş elan yoxdur.</p>';
@@ -1201,8 +1361,16 @@ function handleDragEnd(e) {
         window.resetFilters = function() {
             document.getElementById('searchInput').value = '';
             document.getElementById('mainCategorySelect').value = '';
-            updateSubCategoryDropdown('', false);
+            const mainCatText = document.getElementById('mainCategorySelectedText');
+            if (mainCatText) mainCatText.innerText = "Kateqoriyalar";
+
+            selectedSubCategoryValue = '';
+            buildCustomAccordionDropdown('');
+            
             document.getElementById('sortSelect').value = 'newest';
+            const sortText = document.getElementById('sortSelectedText');
+            if (sortText) sortText.innerText = "Ən yenilər";
+
             currentCategoryTab = '';
             updateActiveTabUI('');
             filterAds();
@@ -1252,20 +1420,16 @@ function handleDragEnd(e) {
 			const description = document.getElementById('adDescription').value.trim();
     
 			if (title || mainCat || subCat || price || description || (typeof currentEditingImages !== 'undefined' && currentEditingImages.length > 0)) {
-				// Dəyişiklik varsa: Qırmızı olsun və üzərinə gəldikdə tündləşsin
 				resetBtn.className = "text-red-500 hover:text-red-600 font-semibold transition text-sm cursor-pointer select-none";
 			} else {
-				// Heç nə yoxdursa: Boz olsun, hover (rəng dəyişməsi) TAMAMİLƏ SÖNÜк OLSUN
 				resetBtn.className = "text-slate-400 font-semibold transition text-sm cursor-pointer select-none";
 			}
 		}
 
-		
 		document.addEventListener('DOMContentLoaded', function() {
 			checkResetButtonColor();
 		});
 
-		
 		document.addEventListener('input', function(e) {
 			if (e.target.closest('#addAdForm')) {
 				checkResetButtonColor();
@@ -1286,27 +1450,22 @@ function handleDragEnd(e) {
 			const isDetailModalOpen = detailModal && !detailModal.classList.contains('hidden');
 
 			if (e.key === 'Escape') {
-				// 1. Əgər tam ekran şəkil açıqdırsə, əvvəlcə onu bağla
 				if (isImageModalOpen) {
 					closeImageModal();
-				} 
-				// 2. Əgər şəkil bağlıdır, amma elan detalları açıqdırsə, onu bağla
-				else if (isDetailModalOpen) {
+				} else if (isDetailModalOpen) {
 					closeDetailModal();
 				}
 			} else if (isImageModalOpen) {
-				// Ox düymələri yalnız tam ekran şəkil açıq olduqda işləsin
 				if (e.key === 'ArrowRight') {
-					nextFullscreenImage();
+                    if (typeof nextFullscreenImage === 'function') nextFullscreenImage();
 				} else if (e.key === 'ArrowLeft') {
-					prevFullscreenImage();
+                    if (typeof prevFullscreenImage === 'function') prevFullscreenImage();
 				}
 			}
 		});
 		
-		
 		let isZoomed = false;
-		const scaleFactor = 2.5; // Yaxınlaşdırma miqyasını buradan tənzimləyə bilərsiniz
+		const scaleFactor = 2.5;
 
 		function resetImageZoom() {
 			isZoomed = false;
@@ -1336,7 +1495,6 @@ function handleDragEnd(e) {
 			imgEl.style.cursor = 'zoom-in';
 			containerEl.style.overflow = 'hidden';
 
-			
 			imgEl.addEventListener('click', function(e) {
 				e.stopPropagation();
 				isZoomed = !isZoomed;
@@ -1345,7 +1503,6 @@ function handleDragEnd(e) {
 					imgEl.style.transition = 'transform 0.1s ease-out';
 					imgEl.style.cursor = 'zoom-out';
 
-					// Klik edilən an dərhal mərkəzə uyğun hesablanması üçün:
 					const containerRect = containerEl.getBoundingClientRect();
 					const imgRect = imgEl.getBoundingClientRect();
 
@@ -1367,7 +1524,6 @@ function handleDragEnd(e) {
 				}
 			});
 
-			
 			imgEl.addEventListener('mousemove', function(e) {
 				if (!isZoomed) return;
 
@@ -1393,14 +1549,6 @@ function handleDragEnd(e) {
 				if (isZoomed) {
 					 imgEl.style.transform = `translate(0px, 0px) scale(${scaleFactor})`;
 				}
-			});
-			
-			
-			const closeButtons = document.querySelectorAll('.close-modal, .fullscreen-close, [data-dismiss="modal"]');
-			closeButtons.forEach(btn => {
-				btn.addEventListener('click', () => {
-					resetImageZoom();
-				});
 			});
 		});
 
