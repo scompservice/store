@@ -1567,3 +1567,21 @@
 				resetImageZoom();
 			}
 		};
+		
+		
+		window.addEventListener('scroll', function() {
+			var backToTopBtn = document.getElementById('backToTop');
+			if (window.scrollY > 200) {
+				backToTopBtn.style.display = 'flex';
+			} else {
+				backToTopBtn.style.display = 'none';
+			}
+		});
+
+		document.getElementById('backToTop').addEventListener('click', function(event) {
+			event.preventDefault();
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
+		});
