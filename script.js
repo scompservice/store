@@ -39,7 +39,7 @@
                 icon: "fa-laptop",
                 sub: {
                     "Audio və video": ["Audio aksesuarlar", "Mikrofonlar", "Qulaqlıqlar", "Digər"],
-                    "Kompüter aksesuarları": ["Laptop Adapters & Power Supplies", "Klaviaturalar və kompüter siçanları", "PC Component Power & Data Cables", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "Video Cables, Adapters & Converters", "Other Cables, Adapters & Connectors", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "USB Hubs & Splitters", "Digər"],
+                    "Kompüter aksesuarları": ["Laptop Adapters & Power Supplies", "Klaviaturalar və kompüter siçanları", "PC Component Power & Data Cables", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "Video Cables, Adapters & Converters", "Other Cables, Adapters & Connectors", "USB Hubs & Splitters", "Digər"],
                     "Yaddaş Qurğuları və Aksesuarları": [
 					  "HDD (Hard Disk Drive)",
 					  "SSD (Solid State Drive)",
