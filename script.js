@@ -40,7 +40,21 @@
                 sub: {
                     "Audio və video": ["Audio aksesuarlar", "Mikrofonlar", "Qulaqlıqlar", "Digər"],
                     "Kompüter aksesuarları": ["Laptop Adapters & Power Supplies", "Klaviaturalar və kompüter siçanları", "PC Component Power & Data Cables", "HDD/SDD Adapters, Cables & Connectors", "COM Port Adapters, Cables & Connectors", "Video Cables, Adapters & Converters", "Other Cables, Adapters & Connectors", "USB flaş və yaddaş kartları", "Yaddaş kart oxuyucuları", "USB Hubs & Splitters", "Digər"],
-                    "Oyunlar, pultlar və proqramlar": ["Proqramlar"],
+                    "Yaddaş Qurğuları və Aksesuarları": [
+					  "HDD (Hard Disk Drive)",
+					  "SSD (Solid State Drive)",
+					  "M.2 SSD",
+					  "External HDD (Hard Disk Drives)",
+					  "USB Flash Drives & Memory Cards",
+					  "Card Readers",
+					  "HDD & SSD Enclosures",
+					  "HDD Caddies & Drive Adapters",
+					  "M.2 & SSD Adapters",
+					  "HDD/SSD Adapters, Cables & Connectors",
+					  "Other Storage Devices",
+					  "Storage Accessories"
+					],
+					"Oyunlar, pultlar və proqramlar": ["Proqramlar"],
                     "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları", "Sərt disklər (HDD, SSD)", "Video kartlar", "Digər"],
                     "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarlar", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk korpusları"],
                     "Ofis avadanlığı və istehlak materialları": ["İstehlak və aksesuarlar"],
