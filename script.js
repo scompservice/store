@@ -627,41 +627,61 @@
             }
         }
 
-        function listenToAds() {
-            onSnapshot(collection(db, "ads"), async (snapshot) => {
-                ads = [];
-                const now = Date.now();
+        let isDataLoaded = false;
 
-                for (const docSnap of snapshot.docs) {
-                    const data = docSnap.data();
-                    let imgList = data.images;
-                    if (!imgList || imgList.length === 0) {
-                        imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
-                    }
-                    const formattedPhone = cleanAndFormatPhone(data.phone);
+		function listenToAds() {
+			isDataLoaded = false;
+			
+			// 10 saniyə ərzində bazadan məlumat gəlməzsə, xəbərdarlıq və yenidən cəhd mexanizmi
+			const loadTimeout = setTimeout(() => {
+				if (!isDataLoaded) {
+					console.warn("Məlumatların gəlməsi gecikdi, yenidən qoşulma yoxlanılır...");
+					showToast("İnternet bağlantısı zəifdir, məlumatlar gözlənilir...", "info");
+				}
+			}, 10000);
 
-                    let isVip = data.isVip;
-                    if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
-                        isVip = false;
-                        try {
-                            await updateDoc(doc(db, "ads", docSnap.id), { isVip: false });
-                        } catch (e) {
-                            console.error("VIP vaxtı bitmə yenilənmə xətası:", e);
-                        }
-                    }
+			onSnapshot(collection(db, "ads"), async (snapshot) => {
+				isDataLoaded = true; // Məlumat uqurla gəldi, taymeri ləğv edirik
+				clearTimeout(loadTimeout);
 
-                    ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
-                }
-                
-                const totalAdsEl = document.getElementById('totalAdsCount');
-                if (totalAdsEl) totalAdsEl.innerText = ads.length;
-                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
-                buildCustomAccordionDropdown(currentMainCat);
+				ads = [];
+				const now = Date.now();
 
-                filterAds();
-                updateFavCount();
-            });
-        }
+				for (const docSnap of snapshot.docs) {
+					const data = docSnap.data();
+					let imgList = data.images;
+					if (!imgList || imgList.length === 0) {
+						imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
+					}
+					const formattedPhone = cleanAndFormatPhone(data.phone);
+
+					let isVip = data.isVip;
+					if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
+						isVip = false;
+						updateDoc(doc(db, "ads", docSnap.id), { isVip: false }).catch(e => console.error("VIP yenilənmə xətası:", e));
+					}
+
+					ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
+				}
+				
+				const totalAdsEl = document.getElementById('totalAdsCount');
+				if (totalAdsEl) totalAdsEl.innerText = ads.length;
+				
+				const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+				buildCustomAccordionDropdown(currentMainCat);
+
+				filterAds();
+				updateFavCount();
+			}, (error) => {
+				console.error("Firebase bağlantı xətası:", error);
+				showToast("Bağlantı qopdu, yenidən qoşulmağa çalışılır...", "error");
+				
+				// Bağlantı kəsildikdə və ya xəta olduqda 10 saniyə sonra avtomatik restart verir
+				setTimeout(() => {
+					listenToAds();
+				}, 10000);
+			});
+		}
 
         function resizeAndConvertImage(file, quality) {
             return new Promise((resolve, reject) => {
@@ -1567,21 +1587,3 @@
 				resetImageZoom();
 			}
 		};
-		
-		
-		window.addEventListener('scroll', function() {
-			var backToTopBtn = document.getElementById('backToTop');
-			if (window.scrollY > 200) {
-				backToTopBtn.style.display = 'flex';
-			} else {
-				backToTopBtn.style.display = 'none';
-			}
-		});
-
-		document.getElementById('backToTop').addEventListener('click', function(event) {
-			event.preventDefault();
-			window.scrollTo({
-				top: 0,
-				behavior: 'smooth'
-			});
-		});
