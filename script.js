@@ -694,6 +694,11 @@
 
 				filterAds();
 				updateFavCount();
+
+				// ★ [ƏLAVƏ OLUNAN HİSSƏ] Bazadan hər dəfə məlumatlar gələndə trafiki yenidən hesablayırıq:
+				if (typeof calculateAndUpdateTraffic === 'function') {
+					calculateAndUpdateTraffic();
+				}
 			}, (error) => {
 				console.error("Firebase bağlantı xətası:", error);
 				showToast("Bağlantı qopdu, yenidən qoşulmağa çalışılır...", "error");
@@ -1609,3 +1614,38 @@
 				resetImageZoom();
 			}
 		};
+		
+		// Trafik ölçüsünü hesablayıb ekrana yazan funksiya
+        function calculateAndUpdateTraffic() {
+            let totalBytes = 0;
+            if (performance && performance.getEntriesByType) {
+                const resources = performance.getEntriesByType('resource');
+                resources.forEach(res => {
+                    totalBytes += (res.decodedBodySize || res.transferSize || 0);
+                });
+            }
+            
+            if (performance.getEntriesByType('navigation')[0]) {
+                const nav = performance.getEntriesByType('navigation')[0];
+                totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
+            }
+
+            // Firebase-dən gələn elanların və şəkillərin həcmini də bura daxil edirik
+            if (typeof ads !== 'undefined' && ads.length > 0) {
+                try {
+                    totalBytes += new Blob([JSON.stringify(ads)]).size;
+                } catch(e) {}
+            }
+
+            const totalMb = (totalBytes / (1024 * 1024)).toFixed(2) + " MB";
+
+            const sizeEl = document.getElementById('topTrafficSize');
+            if (sizeEl) {
+                sizeEl.innerText = totalMb;
+            }
+        }
+
+        // Səhifə ilk yüklənəndə işə düşsün
+        window.addEventListener('load', () => {
+            setTimeout(calculateAndUpdateTraffic, 1000);
+        });
