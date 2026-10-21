@@ -776,43 +776,71 @@
             });
         }
 
-        window.handleNewFiles = async function(input) {
+        // Orijinal faylları saxlamaq üçün qlobal massiv
+		if (!window.originalFiles) {
+			window.originalFiles = [];
+		}
+
+		window.handleNewFiles = async function(input) {
 			if (input.files && input.files.length > 0) {
-				const qualitySelect = document.getElementById('compressionQuality');
-				const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
-
-				showToast("Şəkillər yüklənir...", "info");
-
+				// Yeni seçilən faylları orijinal massivə əlavə edirik (və ya hamısını yeniləyirik)
 				for (let i = 0; i < input.files.length; i++) {
-					const file = input.files[i];
-
-					try {
-						let finalBase64 = "";
-						if (quality === 1) {
-							finalBase64 = await new Promise((resolve, reject) => {
-								const reader = new FileReader();
-								reader.onload = (e) => resolve(e.target.result);
-								reader.onerror = reject;
-								reader.readAsDataURL(file);
-							});
-						} else if (typeof resizeAndConvertImage === 'function') {
-							finalBase64 = await resizeAndConvertImage(file, quality);
-						}
-
-						if (finalBase64) {
-							currentEditingImages.push({ src: finalBase64, rotation: 0 });
-						}
-					} catch(err) { 
-						console.error(err);
-						showToast("Şəkil yüklənərkən xəta baş verdi!", "error");
-					}
+					window.originalFiles.push(input.files[i]);
 				}
-				
-				renderEditingThumbnails();
+
+				await processAndRenderImages();
 				input.value = ''; 
-				showToast("Şəkillər uğurla əlavə olundu!");
 			}
 		};
+
+		async function processAndRenderImages() {
+			if (!window.originalFiles || window.originalFiles.length === 0) return;
+
+			const qualitySelect = document.getElementById('compressionQuality');
+			const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
+
+			showToast("Şəkillər emal olunur...", "info");
+			currentEditingImages = []; // KöhnəBase64 massivini təmizləyirik
+
+			for (let i = 0; i < window.originalFiles.length; i++) {
+				const file = window.originalFiles[i];
+
+				try {
+					let finalBase64 = "";
+					if (quality === 1) {
+						finalBase64 = await new Promise((resolve, reject) => {
+							const reader = new FileReader();
+							reader.onload = (e) => resolve(e.target.result);
+							reader.onerror = reject;
+							reader.readAsDataURL(file);
+						});
+					} else if (typeof resizeAndConvertImage === 'function') {
+						finalBase64 = await resizeAndConvertImage(file, quality);
+					}
+
+					if (finalBase64) {
+						currentEditingImages.push({ src: finalBase64, rotation: 0 });
+					}
+				} catch(err) { 
+					console.error(err);
+					showToast("Şəkil emal edilərkən xəta baş verdi!", "error");
+				}
+			}
+			
+			renderEditingThumbnails();
+			showToast("Şəkillər yeniləndi!");
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			const qualitySelect = document.getElementById('compressionQuality');
+			if (qualitySelect) {
+				qualitySelect.addEventListener('change', async () => {
+					if (window.originalFiles && window.originalFiles.length > 0) {
+						await processAndRenderImages();
+					}
+				});
+			}
+		});
 
 		function renderEditingThumbnails() {
             const container = document.getElementById('imagePreviewContainer');
@@ -858,6 +886,7 @@
         window.removeEditingImage = function(index) {
             currentEditingImages.splice(index, 1);
             renderEditingThumbnails();
+			window.originalFiles.splice(index, 1);
         };
 
         window.rotateEditingImageLeft = function(index) {
