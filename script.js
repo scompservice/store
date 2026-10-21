@@ -46,7 +46,8 @@
 					  "Video Cables, Adapters & Converters",
 					  "COM Port Adapters, Cables & Connectors",
 					  "Other Cables, Adapters & Connectors",
-					  "USB Hubs & Splitters"
+					  "USB Hubs & Splitters",
+					  "USB Bluetooth Adapters"
 					],
 					"Yaddaş Qurğuları və Aksesuarları": [
 					  "HDD (Hard Disk Drive)",
