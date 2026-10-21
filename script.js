@@ -1251,31 +1251,31 @@
 
             let imagesHTML = '';
             if (ad.images && ad.images.length > 0) {
-                const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
-                let thumbsHTML = '';
-                if (ad.images.length > 1) {
-                    thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
-                    for (let idx = 0; idx < ad.images.length; idx++) {
-                        const img = ad.images[idx];
-                        thumbsHTML += `
-                            <div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
-                                <img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})')" class="max-w-full max-h-full object-cover">
-                            </div>
-                        `;
-                    }
-                    thumbsHTML += '</div>';
-                }
+				const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
+				let thumbsHTML = '';
+				if (ad.images.length > 1) {
+					thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
+					for (let idx = 0; idx < ad.images.length; idx++) {
+						const img = ad.images[idx];
+						thumbsHTML += `
+							<div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
+								<img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})'); document.getElementById('zoomText').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})');" class="max-w-full max-h-full object-cover">
+							</div>
+						`;
+					}
+					thumbsHTML += '</div>';
+				}
 
-                imagesHTML = `
-                    <div class="mb-6">
-                        <div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
-                            <img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
-                        </div>
-						<p class="text-[12px] text-center text-blue-600 mt-1 cursor-pointer -translate-y-2 hover:text-blue-800 hover:underline" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
-                        ${thumbsHTML}
-                    </div>
-                `;
-            }
+				imagesHTML = `
+					<div class="mb-6">
+						<div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
+							<img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
+						</div>
+						<p id="zoomText" class="text-[12px] text-center text-blue-600 mt-1 cursor-pointer -translate-y-2 hover:text-blue-800 hover:underline" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
+						${thumbsHTML}
+					</div>
+				`;
+			}
 
             const categoryText = ad.category + (ad.subCategory ? ' / ' + ad.subCategory.replace(' -> ', ' / ') : '');
 
