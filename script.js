@@ -1645,7 +1645,7 @@
 			}
 		};
 		
-		// Trafik ölçüsünü hesablayıb ekrana yazan funksiya
+		// Trafik ölçüsünü dinamik olaraq KB, MB və ya GB formatında hesablayıb yazan funksiya
         function calculateAndUpdateTraffic() {
             let totalBytes = 0;
             if (performance && performance.getEntriesByType) {
@@ -1660,22 +1660,47 @@
                 totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
             }
 
-            // Firebase-dən gələn elanların və şəkillərin həcmini də bura daxil edirik
+            // Firebase-dən gələn elanların və şəkillərin həcmi
             if (typeof ads !== 'undefined' && ads.length > 0) {
                 try {
                     totalBytes += new Blob([JSON.stringify(ads)]).size;
                 } catch(e) {}
             }
 
-            const totalMb = (totalBytes / (1024 * 1024)).toFixed(2) + " MB";
-
+            const targetBytes = totalBytes;
             const sizeEl = document.getElementById('topTrafficSize');
+            
             if (sizeEl) {
-                sizeEl.innerText = totalMb;
+                let currentBytes = 0;
+                // Artım addımı (hədəfin 5%-i qədər sürətlə qalxır)
+                const step = targetBytes / 20; 
+                
+                const timer = setInterval(() => {
+                    currentBytes += step;
+                    if (currentBytes >= targetBytes) {
+                        currentBytes = targetBytes;
+                        clearInterval(timer);
+                    }
+
+                    // Avtomatik vahid keçidi (KB, MB, GB)
+                    let formattedSize = "";
+                    if (currentBytes < 1024 * 1024) {
+                        // 1 MB-dan kiçikdirsə KB ilə göstər
+                        formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
+                    } else if (currentBytes < 1024 * 1024 * 1024) {
+                        // 1 GB-dan kiçikdirsə MB ilə göstər
+                        formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
+                    } else {
+                        // Əks halda GB ilə göstər
+                        formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+                    }
+
+                    sizeEl.innerText = formattedSize;
+                }, 50); // Hər 50 millisaniyədən bir yenilənir
             }
         }
 
         // Səhifə ilk yüklənəndə işə düşsün
         window.addEventListener('load', () => {
-            setTimeout(calculateAndUpdateTraffic, 1000);
+            setTimeout(calculateAndUpdateTraffic, 500);
         });
