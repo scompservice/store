@@ -652,64 +652,65 @@
 
         let isDataLoaded = false;
 
-		function listenToAds() {
-			isDataLoaded = false;
-			
-			// 10 saniyə ərzində bazadan məlumat gəlməzsə, xəbərdarlıq və yenidən cəhd mexanizmi
-			const loadTimeout = setTimeout(() => {
-				if (!isDataLoaded) {
-					console.warn("Məlumatların gəlməsi gecikdi, yenidən qoşulma yoxlanılır...");
-					showToast("Məlumatlar yüklənir, zəhmət olmasa gözləyin...", "info");
-				}
-			}, 10000);
+        function listenToAds() {
+            isDataLoaded = false;
+            
+            const loadTimeout = setTimeout(() => {
+                if (!isDataLoaded) {
+                    console.warn("Məlumatların gəlməsi gecikdi, yenidən qoşulma yoxlanılır...");
+                    showToast("Məlumatlar yüklənir, zəhmət olmasa gözləyin...", "info");
+                }
+            }, 10000);
 
-			onSnapshot(collection(db, "ads"), async (snapshot) => {
-				isDataLoaded = true; // Məlumat uqurla gəldi, taymeri ləğv edirik
-				clearTimeout(loadTimeout);
+            onSnapshot(collection(db, "ads"), async (snapshot) => {
+                isDataLoaded = true; 
+                clearTimeout(loadTimeout);
 
-				ads = [];
-				const now = Date.now();
+                ads = [];
+                const now = Date.now();
 
-				for (const docSnap of snapshot.docs) {
-					const data = docSnap.data();
-					let imgList = data.images;
-					if (!imgList || imgList.length === 0) {
-						imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
-					}
-					const formattedPhone = cleanAndFormatPhone(data.phone);
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    let imgList = data.images;
+                    if (!imgList || imgList.length === 0) {
+                        imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
+                    }
+                    const formattedPhone = cleanAndFormatPhone(data.phone);
 
-					let isVip = data.isVip;
-					if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
-						isVip = false;
-						updateDoc(doc(db, "ads", docSnap.id), { isVip: false }).catch(e => console.error("VIP yenilənmə xətası:", e));
-					}
+                    let isVip = data.isVip;
+                    if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
+                        isVip = false;
+                        updateDoc(doc(db, "ads", docSnap.id), { isVip: false }).catch(e => console.error("VIP yenilənmə xətası:", e));
+                    }
 
-					ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
-				}
-				
-				const totalAdsEl = document.getElementById('totalAdsCount');
-				if (totalAdsEl) totalAdsEl.innerText = ads.length;
-				
-				const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
-				buildCustomAccordionDropdown(currentMainCat);
+                    ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
+                }
+                
+                const totalAdsEl = document.getElementById('totalAdsCount');
+                if (totalAdsEl) totalAdsEl.innerText = ads.length;
+                
+                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+                buildCustomAccordionDropdown(currentMainCat);
 
-				filterAds();
-				updateFavCount();
+                filterAds();
+                updateFavCount();
 
-				// ★ [ƏLAVƏ OLUNAN HİSSƏ] Bazadan hər dəfə məlumatlar gələndə trafiki yenidən hesablayırıq:
-				if (typeof calculateAndUpdateTraffic === 'function') {
-					calculateAndUpdateTraffic();
-				}
-			}, (error) => {
-				console.error("Firebase bağlantı xətası:", error);
-				showToast("Bağlantı qopdu, yenidən qoşulmağa çalışılır...", "error");
-				
-				// Bağlantı kəsildikdə və ya xəta olduqda 10 saniyə sonra avtomatik restart verir
-				setTimeout(() => {
-					listenToAds();
-				}, 10000);
-			});
-		}
+                // Elanlar gəldi, trafiki hesablayırıq və animasiya TAM BİTƏndə spinneri gizlədirik
+                calculateAndUpdateTraffic(() => {
+                    const spinner = document.getElementById('trafficSpinner');
+                    if (spinner) {
+                        spinner.style.display = 'none';
+                    }
+                });
+
+            }, (error) => {
+                console.error("Firebase bağlantı xətası:", error);
+                showToast("Bağlantı qopdu, yenidən qoşulmağa çalışılır...", "error");
+                setTimeout(() => {
+                    listenToAds();
+                }, 10000);
+            });
+        }
 
         function resizeAndConvertImage(file, quality) {
             return new Promise((resolve, reject) => {
@@ -1251,31 +1252,31 @@
 
             let imagesHTML = '';
             if (ad.images && ad.images.length > 0) {
-				const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
-				let thumbsHTML = '';
-				if (ad.images.length > 1) {
-					thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
-					for (let idx = 0; idx < ad.images.length; idx++) {
-						const img = ad.images[idx];
-						thumbsHTML += `
-							<div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
-								<img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})'); document.getElementById('zoomText').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})');" class="max-w-full max-h-full object-cover">
-							</div>
-						`;
-					}
-					thumbsHTML += '</div>';
-				}
-
-				imagesHTML = `
-					<div class="mb-6">
-						<div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
-							<img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
+			const escapedImagesStr = JSON.stringify(ad.images).replace(/"/g, '&quot;');
+			let thumbsHTML = '';
+			if (ad.images.length > 1) {
+				thumbsHTML += '<div class="flex gap-2 overflow-x-auto pb-2">';
+				for (let idx = 0; idx < ad.images.length; idx++) {
+					const img = ad.images[idx];
+					thumbsHTML += `
+						<div class="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-transparent hover:border-primary cursor-pointer transition flex-shrink-0 flex items-center justify-center">
+							<img src="${img}" onclick="document.getElementById('mainDetailImg').src='${img}'; document.getElementById('mainDetailImg').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})'); document.getElementById('zoomText').setAttribute('onclick', 'openImageModalWithList(${escapedImagesStr}, ${idx})');" class="max-w-full max-h-full object-cover">
 						</div>
-						<p id="zoomText" class="text-[12px] text-center text-blue-600 mt-1 cursor-pointer -translate-y-2 hover:text-blue-800 hover:underline" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
-						${thumbsHTML}
-					</div>
-				`;
+					`;
+				}
+				thumbsHTML += '</div>';
 			}
+
+			imagesHTML = `
+				<div class="mb-6">
+					<div class="relative h-80 rounded-2xl overflow-hidden bg-slate-100 mb-3 border border-slate-200 flex items-center justify-center">
+						<img id="mainDetailImg" src="${ad.images[0]}" onclick="openImageModalWithList(${escapedImagesStr}, 0)" class="max-w-full max-h-full object-cover cursor-pointer hover:opacity-95 transition" title="Şəkilə tam ekran baxmaq üçün klikləyin">
+					</div>
+					<p id="zoomText" class="text-[12px] text-center text-blue-600 mt-1 cursor-pointer -translate-y-2 hover:text-blue-800 hover:underline" onclick="openImageModalWithList(${escapedImagesStr}, 0)">Şəkli böyütmək üçün klikləyin</p>
+					${thumbsHTML}
+				</div>
+			`;
+		}
 
             const categoryText = ad.category + (ad.subCategory ? ' / ' + ad.subCategory.replace(' -> ', ' / ') : '');
 
@@ -1645,62 +1646,69 @@
 			}
 		};
 		
-		// Trafik ölçüsünü dinamik olaraq KB, MB və ya GB formatında hesablayıb yazan funksiya
-        function calculateAndUpdateTraffic() {
-            let totalBytes = 0;
-            if (performance && performance.getEntriesByType) {
-                const resources = performance.getEntriesByType('resource');
-                resources.forEach(res => {
-                    totalBytes += (res.decodedBodySize || res.transferSize || 0);
-                });
-            }
-            
-            if (performance.getEntriesByType('navigation')[0]) {
-                const nav = performance.getEntriesByType('navigation')[0];
-                totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
-            }
-
-            // Firebase-dən gələn elanların və şəkillərin həcmi
-            if (typeof ads !== 'undefined' && ads.length > 0) {
-                try {
-                    totalBytes += new Blob([JSON.stringify(ads)]).size;
-                } catch(e) {}
-            }
-
-            const targetBytes = totalBytes;
-            const sizeEl = document.getElementById('topTrafficSize');
-            
-            if (sizeEl) {
-                let currentBytes = 0;
-                // Artım addımı (hədəfin 5%-i qədər sürətlə qalxır)
-                const step = targetBytes / 20; 
-                
-                const timer = setInterval(() => {
-                    currentBytes += step;
-                    if (currentBytes >= targetBytes) {
-                        currentBytes = targetBytes;
-                        clearInterval(timer);
-                    }
-
-                    // Avtomatik vahid keçidi (KB, MB, GB)
-                    let formattedSize = "";
-                    if (currentBytes < 1024 * 1024) {
-                        // 1 MB-dan kiçikdirsə KB ilə göstər
-                        formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
-                    } else if (currentBytes < 1024 * 1024 * 1024) {
-                        // 1 GB-dan kiçikdirsə MB ilə göstər
-                        formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
-                    } else {
-                        // Əks halda GB ilə göstər
-                        formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
-                    }
-
-                    sizeEl.innerText = formattedSize;
-                }, 50); // Hər 50 millisaniyədən bir yenilənir
-            }
-        }
-
-        // Səhifə ilk yüklənəndə işə düşsün
-        window.addEventListener('load', () => {
-            setTimeout(calculateAndUpdateTraffic, 500);
+		// Trafik ölçmə və artım funksiyası (onComplete callback əlavə olundu)
+function calculateAndUpdateTraffic(onComplete) {
+    let totalBytes = 0;
+    
+    // 1. Brauzerdə yüklənən resurslar
+    if (performance && performance.getEntriesByType) {
+        const resources = performance.getEntriesByType('resource');
+        resources.forEach(res => {
+            totalBytes += (res.decodedBodySize || res.transferSize || 0);
         });
+    }
+    
+    if (performance.getEntriesByType('navigation')[0]) {
+        const nav = performance.getEntriesByType('navigation')[0];
+        totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
+    }
+
+    // 2. Firebase-dən gələn elanların həcmi
+    if (typeof ads !== 'undefined' && ads.length > 0) {
+        try {
+            totalBytes += new Blob([JSON.stringify(ads)]).size;
+        } catch(e) {}
+    }
+
+    const targetBytes = totalBytes;
+    const sizeEl = document.getElementById('topTrafficSize');
+    
+    if (sizeEl && targetBytes > 0) {
+        let currentBytes = 0;
+        const step = targetBytes / 25; 
+        
+        const timer = setInterval(() => {
+            currentBytes += step;
+            if (currentBytes >= targetBytes) {
+                currentBytes = targetBytes;
+                clearInterval(timer);
+                
+                // MEQABAYTLAR TAM YIĞILIB QURTARDI: İndi xəbər veririk ki, spinner gizlənsin
+                if (typeof onComplete === 'function') {
+                    onComplete();
+                }
+            }
+
+            let formattedSize = "";
+            if (currentBytes < 1024 * 1024) {
+                formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
+            } else if (currentBytes < 1024 * 1024 * 1024) {
+                formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
+            } else {
+                formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+            }
+
+            sizeEl.innerText = formattedSize;
+        }, 40);
+    } else {
+        if (typeof onComplete === 'function') {
+            onComplete();
+        }
+    }
+}
+		
+		// Səhifə açılan kimi ilkin resurs həcmini dərhal hesablayıb hərəkətə başlayırıq
+		window.addEventListener('load', () => {
+			// İlkin olaraq səhifənin yüklənmə həcmini dərhal göstərək ki, sıfırda qalmasın
+			calculateAndUpdateTraffic();
+		});
