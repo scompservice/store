@@ -659,7 +659,7 @@
 			const loadTimeout = setTimeout(() => {
 				if (!isDataLoaded) {
 					console.warn("Məlumatların gəlməsi gecikdi, yenidən qoşulma yoxlanılır...");
-					showToast("İnternet bağlantısı zəifdir, məlumatlar gözlənilir...", "info");
+					showToast("Məlumatlar yüklənir, zəhmət olmasa gözləyin...", "info");
 				}
 			}, 10000);
 
