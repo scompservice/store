@@ -1647,65 +1647,65 @@
 		};
 		
 		// Trafik ölçmə və artım funksiyası (onComplete callback əlavə olundu)
-function calculateAndUpdateTraffic(onComplete) {
-    let totalBytes = 0;
-    
-    // 1. Brauzerdə yüklənən resurslar
-    if (performance && performance.getEntriesByType) {
-        const resources = performance.getEntriesByType('resource');
-        resources.forEach(res => {
-            totalBytes += (res.decodedBodySize || res.transferSize || 0);
-        });
-    }
-    
-    if (performance.getEntriesByType('navigation')[0]) {
-        const nav = performance.getEntriesByType('navigation')[0];
-        totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
-    }
+		function calculateAndUpdateTraffic(onComplete) {
+			let totalBytes = 0;
+			
+			// 1. Brauzerdə yüklənən resurslar
+			if (performance && performance.getEntriesByType) {
+				const resources = performance.getEntriesByType('resource');
+				resources.forEach(res => {
+					totalBytes += (res.decodedBodySize || res.transferSize || 0);
+				});
+			}
+			
+			if (performance.getEntriesByType('navigation')[0]) {
+				const nav = performance.getEntriesByType('navigation')[0];
+				totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
+			}
 
-    // 2. Firebase-dən gələn elanların həcmi
-    if (typeof ads !== 'undefined' && ads.length > 0) {
-        try {
-            totalBytes += new Blob([JSON.stringify(ads)]).size;
-        } catch(e) {}
-    }
+			// 2. Firebase-dən gələn elanların həcmi
+			if (typeof ads !== 'undefined' && ads.length > 0) {
+				try {
+					totalBytes += new Blob([JSON.stringify(ads)]).size;
+				} catch(e) {}
+			}
 
-    const targetBytes = totalBytes;
-    const sizeEl = document.getElementById('topTrafficSize');
-    
-    if (sizeEl && targetBytes > 0) {
-        let currentBytes = 0;
-        const step = targetBytes / 25; 
-        
-        const timer = setInterval(() => {
-            currentBytes += step;
-            if (currentBytes >= targetBytes) {
-                currentBytes = targetBytes;
-                clearInterval(timer);
-                
-                // MEQABAYTLAR TAM YIĞILIB QURTARDI: İndi xəbər veririk ki, spinner gizlənsin
-                if (typeof onComplete === 'function') {
-                    onComplete();
-                }
-            }
+			const targetBytes = totalBytes;
+			const sizeEl = document.getElementById('topTrafficSize');
+			
+			if (sizeEl && targetBytes > 0) {
+				let currentBytes = 0;
+				const step = targetBytes / 25; 
+				
+				const timer = setInterval(() => {
+					currentBytes += step;
+					if (currentBytes >= targetBytes) {
+						currentBytes = targetBytes;
+						clearInterval(timer);
+						
+						// MEQABAYTLAR TAM YIĞILIB QURTARDI: İndi xəbər veririk ki, spinner gizlənsin
+						if (typeof onComplete === 'function') {
+							onComplete();
+						}
+					}
 
-            let formattedSize = "";
-            if (currentBytes < 1024 * 1024) {
-                formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
-            } else if (currentBytes < 1024 * 1024 * 1024) {
-                formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
-            } else {
-                formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
-            }
+					let formattedSize = "";
+					if (currentBytes < 1024 * 1024) {
+						formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
+					} else if (currentBytes < 1024 * 1024 * 1024) {
+						formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
+					} else {
+						formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+					}
 
-            sizeEl.innerText = formattedSize;
-        }, 40);
-    } else {
-        if (typeof onComplete === 'function') {
-            onComplete();
-        }
-    }
-}
+					sizeEl.innerText = formattedSize;
+				}, 40);
+			} else {
+				if (typeof onComplete === 'function') {
+					onComplete();
+				}
+			}
+		}
 		
 		// Səhifə açılan kimi ilkin resurs həcmini dərhal hesablayıb hərəkətə başlayırıq
 		window.addEventListener('load', () => {
