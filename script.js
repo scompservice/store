@@ -101,22 +101,6 @@
         let activeFullscreenImages = [];
         let currentFullscreenIndex = 0;
         let selectedSubCategoryValue = '';
-		
-		let quill;
-
-		document.addEventListener('DOMContentLoaded', () => {
-			quill = new Quill('#editorContainer', {
-				theme: 'snow',
-				modules: {
-					toolbar: [
-						['bold', 'italic', 'underline', 'strike'],
-						[{ 'color': [] }, { 'background': [] }],
-						[{ 'list': 'ordered'}, { 'list': 'bullet' }],
-						['clean']
-					]
-				}
-			});
-		});
 
         window.runAdminMigration = async function() {
             if (!currentUser) {
@@ -257,6 +241,7 @@
             });
         };
 		
+		// Əsas kateqoriya menyusunun açılıb-bağlanması
         window.toggleMainCatMenu = function() {
             const list = document.getElementById('mainCategoryDropdownList');
             const subList = document.getElementById('customSubCatList');
@@ -269,6 +254,7 @@
             if (list) list.classList.toggle('hidden');
         };
 
+        // Sıralama menyusunun açılıb-bağlanması
         window.toggleSortMenu = function() {
             const list = document.getElementById('sortDropdownList');
             const mainList = document.getElementById('mainCategoryDropdownList');
@@ -289,6 +275,7 @@
             const mainList = document.getElementById('mainCategoryDropdownList');
             const sortList = document.getElementById('sortDropdownList');
 
+            // Digərlərini bağla
             if (mainList) mainList.classList.add('hidden');
             if (sortList) sortList.classList.add('hidden');
 
@@ -317,6 +304,7 @@
                 container.classList.add('hidden');
             }
 
+            // Alt kateqoriya menyusu
             const customDropdown = document.getElementById('customSubCatList');
             const customToggleBtn = document.querySelector('[onclick="toggleCustomSubCatMenu()"]');
             if (customDropdown && !customDropdown.classList.contains('hidden')) {
@@ -325,6 +313,7 @@
                 }
             }
 
+            // Əsas kateqoriya menyusu
             const mainDropdownList = document.getElementById('mainCategoryDropdownList');
             const mainToggleBtn = document.querySelector('[onclick="toggleMainCatMenu()"]');
             if (mainDropdownList && !mainDropdownList.classList.contains('hidden')) {
@@ -333,6 +322,7 @@
                 }
             }
 
+            // Sıralama menyusu
             const sortDropdownList = document.getElementById('sortDropdownList');
             const sortToggleBtn = document.querySelector('[onclick="toggleSortMenu()"]');
             if (sortDropdownList && !sortDropdownList.classList.contains('hidden')) {
@@ -369,6 +359,7 @@
 
             if (mainSelect && mainDropdownList) {
                 mainSelect.innerHTML = '<option value="">Kateqoriyalar</option>';
+                // Varsayılan başlık seçeneğindeki py-2.5 değerini py-1.5 yaptık:
                 mainDropdownList.innerHTML = '<div onclick="selectMainCatOption(\'\', \'Kateqoriyalar\')" class="px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer transition">Bütün kateqoriyalar</div>';
                 
                 for (const catName of Object.keys(categoriesData)) {
@@ -378,6 +369,7 @@
                     mainSelect.appendChild(mainOpt);
 
                     let divItem = document.createElement('div');
+                    // Buradaki py-3 değerini py-1.5 (veya py-1) yaparak dikey mesafeyi daralttık:
                     divItem.className = "px-4 py-1.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition";
                     divItem.innerText = catName;
                     divItem.onclick = () => selectMainCatOption(catName, catName);
@@ -480,6 +472,7 @@
 			if (itemsEl) {
 				const isOpen = !itemsEl.classList.contains('hidden');
 
+				// Bütün qrupları bağla və ox işarələrini sıfırla
 				document.querySelectorAll('[id^="group_"]').forEach(el => {
 					if (el.id !== groupId) {
 						el.classList.add('hidden');
@@ -490,6 +483,7 @@
 					}
 				});
 
+				// Kliklənən qrupun vəziyyətini dəyiş (açıqdısa bağla, bağlıdısa aç)
 				if (isOpen) {
 					itemsEl.classList.add('hidden');
 					iconEl.className = "fa-solid fa-chevron-right text-[10px] text-slate-400 transition-transform duration-200";
@@ -701,6 +695,7 @@
                 filterAds();
                 updateFavCount();
 
+                // Elanlar gəldi, trafiki hesablayırıq və animasiya TAM BİTƏndə spinneri gizlədirik
                 calculateAndUpdateTraffic(() => {
                     const spinner = document.getElementById('trafficSpinner');
                     if (spinner) {
@@ -782,12 +777,14 @@
             });
         }
 
+        // Orijinal faylları saxlamaq üçün qlobal massiv
 		if (!window.originalFiles) {
 			window.originalFiles = [];
 		}
 
 		window.handleNewFiles = async function(input) {
 			if (input.files && input.files.length > 0) {
+				// Yeni seçilən faylları orijinal massivə əlavə edirik (və ya hamısını yeniləyirik)
 				for (let i = 0; i < input.files.length; i++) {
 					window.originalFiles.push(input.files[i]);
 				}
@@ -804,7 +801,7 @@
 			const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
 
 			showToast("Şəkillər emal olunur...", "info");
-			currentEditingImages = [];
+			currentEditingImages = []; // KöhnəBase64 massivini təmizləyirik
 
 			for (let i = 0; i < window.originalFiles.length; i++) {
 				const file = window.originalFiles[i];
@@ -965,23 +962,21 @@
                 const days = parseInt(document.getElementById('vipDays').value) || 7;
                 vipExpiresAt = Date.now() + (days * 24 * 60 * 60 * 1000);
             }
-            
-			const descriptionHtml = quill ? quill.root.innerHTML : '';
 
-			const adData = {
-				title: document.getElementById('adTitle').value,
-				category: mainCategoryVal,
-				subCategory: subCategoryVal,
-				price: Number(document.getElementById('adPrice').value),
-				phone: finalPhone,
-				images: finalImages,
-				description: descriptionHtml, // <--- HTML formatında bazaya gedir
-				isVip: isVipChecked,
-				vipExpiresAt: vipExpiresAt,
-				isPinned: isPinnedChecked,
-				condition: selectedCondition,
-				createdAt: Date.now()
-			};
+            const adData = {
+                title: document.getElementById('adTitle').value,
+                category: mainCategoryVal,
+                subCategory: subCategoryVal,
+                price: Number(document.getElementById('adPrice').value),
+                phone: finalPhone,
+                images: finalImages,
+                description: document.getElementById('adDescription').value,
+                isVip: isVipChecked,
+                vipExpiresAt: vipExpiresAt,
+                isPinned: isPinnedChecked,
+                condition: selectedCondition,
+                createdAt: Date.now()
+            };
 
             try {
                 if (editingId) {
@@ -1021,48 +1016,44 @@
         };
 
         window.editAd = function(id) {
-			const ad = ads.find(a => a.id === id);
-			if (!ad) return;
+            const ad = ads.find(a => a.id === id);
+            if (!ad) return;
 
-			document.getElementById('editingAdId').value = ad.id;
-			document.getElementById('adTitle').value = ad.title;
-			document.getElementById('adIsVip').checked = !!ad.isVip;
-			document.getElementById('adIsPinned').checked = !!ad.isPinned;
-			
-			const vipDurationContainer = document.getElementById('vipDurationContainer');
-			if (ad.isVip) {
-				vipDurationContainer.classList.remove('hidden');
-				if (ad.vipExpiresAt) {
-					const remainingDays = Math.max(1, Math.ceil((ad.vipExpiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
-					document.getElementById('vipDays').value = remainingDays;
-				}
-			} else {
-				vipDurationContainer.classList.add('hidden');
-			}
+            document.getElementById('editingAdId').value = ad.id;
+            document.getElementById('adTitle').value = ad.title;
+            document.getElementById('adIsVip').checked = !!ad.isVip;
+            document.getElementById('adIsPinned').checked = !!ad.isPinned;
+            
+            const vipDurationContainer = document.getElementById('vipDurationContainer');
+            if (ad.isVip) {
+                vipDurationContainer.classList.remove('hidden');
+                if (ad.vipExpiresAt) {
+                    const remainingDays = Math.max(1, Math.ceil((ad.vipExpiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
+                    document.getElementById('vipDays').value = remainingDays;
+                }
+            } else {
+                vipDurationContainer.classList.add('hidden');
+            }
 
-			const conditionVal = ad.condition || 'Yeni';
-			const conditionRadio = document.querySelector(`input[name="adCondition"][value="${conditionVal}"]`);
-			if (conditionRadio) conditionRadio.checked = true;
-			
-			document.getElementById('modalMainCategory').value = ad.category || "";
-			onModalMainCategoryChange();
-			document.getElementById('modalSubCategory').value = ad.subCategory || "";
+            const conditionVal = ad.condition || 'Yeni';
+            const conditionRadio = document.querySelector(`input[name="adCondition"][value="${conditionVal}"]`);
+            if (conditionRadio) conditionRadio.checked = true;
+            
+            document.getElementById('modalMainCategory').value = ad.category || "";
+            onModalMainCategoryChange();
+            document.getElementById('modalSubCategory').value = ad.subCategory || "";
 
-			document.getElementById('adPrice').value = ad.price;
-			document.getElementById('adPhone').value = ad.phone || "+994 50 545 85 86";
-			
-			if (quill) {
-				quill.root.innerHTML = ad.description || '';
-			}
+            document.getElementById('adPrice').value = ad.price;
+            document.getElementById('adPhone').value = ad.phone || "+994 50 545 85 86";
+            document.getElementById('adDescription').value = ad.description;
+            document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
 
-			document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
+            currentEditingImages = (ad.images || []).map(src => ({ src: src, rotation: 0 }));
+            renderEditingThumbnails();
 
-			currentEditingImages = (ad.images || []).map(src => ({ src: src, rotation: 0 }));
-			renderEditingThumbnails();
-
-			closeDetailModal();
-			openAddModal();
-		};
+            closeDetailModal();
+            openAddModal();
+        };
 
         window.filterAds = function() {
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -1197,7 +1188,7 @@
                                 </div>
                                 ${ad.subCategory ? '<div class="text-[11px] text-slate-500 font-medium mb-1">' + ad.subCategory.replace(' -> ', ' / ') + '</div>' : ''}
                                 <h3 class="font-bold text-slate-900 mt-1 cursor-pointer text-sm leading-snug" onclick="openDetail('${ad.id}')">${ad.title}</h3>
-                                <div class="text-slate-500 text-xs mt-1.5 line-clamp-2">${ad.description}</div>
+                                <p class="text-slate-500 text-xs mt-1.5 line-clamp-2 whitespace-pre-line">${ad.description}</p>
                                 ${adminVipWarningHTML}
                             </div>
                             <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -1227,6 +1218,7 @@
 			const selectedTextEl = document.getElementById('mainCategorySelectedText');
 			if (selectedTextEl) selectedTextEl.innerText = catNameText;
 
+			// Alt kateqoriyanı sıfırlamaq üçün əlavələr:
 			selectedSubCategoryValue = '';
 			const subCatSelectedText = document.getElementById('subCategorySelectedText');
 			if (subCatSelectedText) subCatSelectedText.innerText = "Alt Kateqoriyalar";
@@ -1306,7 +1298,7 @@
                     </div>
                     <span class="text-2xl font-black text-slate-900 whitespace-nowrap ml-2">${ad.price.toFixed(2)} AZN</span>
                 </div>
-                <div class="text-slate-600 text-sm leading-relaxed mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">${ad.description}</div>
+                <p class="text-slate-600 text-sm leading-relaxed mb-6 whitespace-pre-line bg-slate-50 p-4 rounded-xl border border-slate-100">${ad.description}</p>
                 
                 <div class="flex items-center gap-2 mb-6 flex-wrap">
                     <span class="text-xs font-semibold text-slate-400 mr-1">Paylaş:</span>
@@ -1491,11 +1483,6 @@
 			if (defaultCondition) defaultCondition.checked = true;
 			currentEditingImages = [];
 			renderEditingThumbnails();
-
-			if (quill) {
-				quill.root.innerHTML = '';
-			}
-
 			checkResetButtonColor();
 			showToast("Forma sıfırlandı", "info");
 		};
@@ -1659,63 +1646,69 @@
 			}
 		};
 		
-		function calculateAndUpdateTraffic(onComplete) {
-		let totalBytes = 0;
-		
-		if (performance && performance.getEntriesByType) {
-			const resources = performance.getEntriesByType('resource');
-			resources.forEach(res => {
-				totalBytes += (res.decodedBodySize || res.transferSize || 0);
-			});
-		}
-		
-		if (performance.getEntriesByType('navigation')[0]) {
-			const nav = performance.getEntriesByType('navigation')[0];
-			totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
-		}
+		// Trafik ölçmə və artım funksiyası (onComplete callback əlavə olundu)
+function calculateAndUpdateTraffic(onComplete) {
+    let totalBytes = 0;
+    
+    // 1. Brauzerdə yüklənən resurslar
+    if (performance && performance.getEntriesByType) {
+        const resources = performance.getEntriesByType('resource');
+        resources.forEach(res => {
+            totalBytes += (res.decodedBodySize || res.transferSize || 0);
+        });
+    }
+    
+    if (performance.getEntriesByType('navigation')[0]) {
+        const nav = performance.getEntriesByType('navigation')[0];
+        totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
+    }
 
-		if (typeof ads !== 'undefined' && ads.length > 0) {
-			try {
-				totalBytes += new Blob([JSON.stringify(ads)]).size;
-			} catch(e) {}
-		}
+    // 2. Firebase-dən gələn elanların həcmi
+    if (typeof ads !== 'undefined' && ads.length > 0) {
+        try {
+            totalBytes += new Blob([JSON.stringify(ads)]).size;
+        } catch(e) {}
+    }
 
-		const targetBytes = totalBytes;
-		const sizeEl = document.getElementById('topTrafficSize');
+    const targetBytes = totalBytes;
+    const sizeEl = document.getElementById('topTrafficSize');
+    
+    if (sizeEl && targetBytes > 0) {
+        let currentBytes = 0;
+        const step = targetBytes / 25; 
+        
+        const timer = setInterval(() => {
+            currentBytes += step;
+            if (currentBytes >= targetBytes) {
+                currentBytes = targetBytes;
+                clearInterval(timer);
+                
+                // MEQABAYTLAR TAM YIĞILIB QURTARDI: İndi xəbər veririk ki, spinner gizlənsin
+                if (typeof onComplete === 'function') {
+                    onComplete();
+                }
+            }
+
+            let formattedSize = "";
+            if (currentBytes < 1024 * 1024) {
+                formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
+            } else if (currentBytes < 1024 * 1024 * 1024) {
+                formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
+            } else {
+                formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+            }
+
+            sizeEl.innerText = formattedSize;
+        }, 40);
+    } else {
+        if (typeof onComplete === 'function') {
+            onComplete();
+        }
+    }
+}
 		
-		if (sizeEl && targetBytes > 0) {
-			let currentBytes = 0;
-			const step = targetBytes / 25; 
-			
-				const timer = setInterval(() => {
-					currentBytes += step;
-					if (currentBytes >= targetBytes) {
-						currentBytes = targetBytes;
-						clearInterval(timer);
-						
-						if (typeof onComplete === 'function') {
-							onComplete();
-						}
-					}
-
-					let formattedSize = "";
-					if (currentBytes < 1024 * 1024) {
-						formattedSize = (currentBytes / 1024).toFixed(1) + " KB";
-					} else if (currentBytes < 1024 * 1024 * 1024) {
-						formattedSize = (currentBytes / (1024 * 1024)).toFixed(2) + " MB";
-					} else {
-						formattedSize = (currentBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
-					}
-
-					sizeEl.innerText = formattedSize;
-				}, 40);
-			} else {
-				if (typeof onComplete === 'function') {
-					onComplete();
-				}
-			}
-		}
-		
+		// Səhifə açılan kimi ilkin resurs həcmini dərhal hesablayıb hərəkətə başlayırıq
 		window.addEventListener('load', () => {
+			// İlkin olaraq səhifənin yüklənmə həcmini dərhal göstərək ki, sıfırda qalmasın
 			calculateAndUpdateTraffic();
 		});
