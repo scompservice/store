@@ -1085,13 +1085,25 @@
                         adData.vipExpiresAt = null;
                     }
                     await updateDoc(doc(db, "ads", editingId), adData);
+                    
+                    // AĞILLI YENİLƏMƏ: Bütün siyahını yox, yalnız bu elanı massivdə yeniləyirik
+                    const index = ads.findIndex(a => a.id === editingId);
+                    if (index > -1) {
+                        ads[index] = { ...ads[index], ...adData, phone: finalPhone, images: finalImages };
+                    }
+                    
                     showToast("Elan uğurla yeniləndi!");
                 } else {
                     adData.views = 0;
-                    await addDoc(collection(db, "ads"), adData);
+                    const docRef = await addDoc(collection(db, "ads"), adData);
+                    
+                    // Yeni elanı birbaşa massivin əvvəlinə əlavə edirik
+                    ads.unshift({ id: docRef.id, ...adData, phone: finalPhone });
+                    
                     showToast("Elan uğurla əlavə olundu!");
                 }
-				listenToAds();
+                
+                filterAds(); // Ekranı dərhal yeniləyirik (meqabayt sayğacına toxunulmur!)
                 closeAddModal();
                 closeDetailModal();
             } catch (err) {
@@ -1101,8 +1113,8 @@
                 submitBtn.innerText = "Yadda Saxla / Dərc Et";
             }
         };
-
-        window.deleteAd = async function(id) {
+		
+		window.deleteAd = async function(id) {
             if (!currentUser) {
                 showToast("Bu əməliyyat üçün admin kimi daxil olmalısınız!", 'error');
                 return;
@@ -1110,9 +1122,13 @@
             if (confirm("Bu elanı silmək istədiyinizə əminsiniz?")) {
                 try {
                     await deleteDoc(doc(db, "ads", id));
+                    
+                    // AĞILLI YENİLƏMƏ: Elanı massivdən dərhal silirik
+                    ads = ads.filter(a => a.id !== id);
+                    
                     closeDetailModal();
                     showToast("Elan uğurla silindi.");
-					listenToAds();
+                    filterAds(); // Ekranı dərhal yeniləyirik
                 } catch (err) { showToast("Silinmə xətası: " + err.message, 'error'); }
             }
         };
