@@ -1368,7 +1368,10 @@
                 document.getElementById('adIsPinned').checked = false;
                 document.getElementById('vipDurationContainer').classList.add('hidden');
                 document.querySelector('input[name="adCondition"][value="Yeni"]').checked = true;
+                
+                // BURASI VACİBDİR: Yeni elan açılarkən köhnə şəkilləri tamamilə sıfırlayırıq
                 currentEditingImages = [];
+                window.originalFiles = []; 
                 renderEditingThumbnails();
             }
             document.getElementById('addModal').classList.remove('hidden');
