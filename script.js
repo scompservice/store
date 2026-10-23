@@ -1091,6 +1091,7 @@
                     await addDoc(collection(db, "ads"), adData);
                     showToast("Elan uğurla əlavə olundu!");
                 }
+				listenToAds();
                 closeAddModal();
                 closeDetailModal();
             } catch (err) {
@@ -1111,6 +1112,7 @@
                     await deleteDoc(doc(db, "ads", id));
                     closeDetailModal();
                     showToast("Elan uğurla silindi.");
+					listenToAds();
                 } catch (err) { showToast("Silinmə xətası: " + err.message, 'error'); }
             }
         };
