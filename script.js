@@ -1,6 +1,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot, query, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+		import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCwqM_2qvOX99DNTu9nAClaT9KVSSOl0h0",
@@ -649,10 +649,10 @@
                 console.error("Stats error:", e);
             }
         }
+		
+		let isDataLoaded = false;
 
-        let isDataLoaded = false;
-
-        function listenToAds() {
+        async function listenToAds() {
             isDataLoaded = false;
             
             const loadTimeout = setTimeout(() => {
@@ -662,54 +662,154 @@
                 }
             }, 10000);
 
-            onSnapshot(collection(db, "ads"), async (snapshot) => {
-                isDataLoaded = true; 
+            try {
+                ads = [];
+                let batchSize = 25; // İlk batch
+                let firstQuery = query(collection(db, "ads"), limit(batchSize));
+                let snapshot = await getDocs(firstQuery);
+
+                isDataLoaded = true;
                 clearTimeout(loadTimeout);
 
-                ads = [];
-                const now = Date.now();
+                if (!snapshot.empty) {
+                    processSnapshotDocs(snapshot.docs);
+                    filterAds(); 
 
-                for (const docSnap of snapshot.docs) {
-                    const data = docSnap.data();
-                    let imgList = data.images;
-                    if (!imgList || imgList.length === 0) {
-                        imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
+                    let lastVisible = snapshot.docs[snapshot.docs.length - 1];
+                    
+                    // Əgər ilk batch-dəki elanların sayı limitdən azdırsa, deməli başqa elan yoxdur, spinneri gizlət
+                    if (snapshot.docs.length < batchSize) {
+                        const spinner = document.getElementById('trafficSpinner');
+                        if (spinner) spinner.style.display = 'none';
+                    } else {
+                        // Hələ elanlar qalıb, arxa fonda davam edirik, SPİNNER FIRLANMAĞA DAVAM EDİR
+                        updateTrafficSize();
+                        fetchRemainingAdsInBackground(lastVisible, batchSize);
                     }
-                    const formattedPhone = cleanAndFormatPhone(data.phone);
-
-                    let isVip = data.isVip;
-                    if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
-                        isVip = false;
-                        updateDoc(doc(db, "ads", docSnap.id), { isVip: false }).catch(e => console.error("VIP yenilənmə xətası:", e));
-                    }
-
-                    ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
-                }
-                
-                const totalAdsEl = document.getElementById('totalAdsCount');
-                if (totalAdsEl) totalAdsEl.innerText = ads.length;
-                
-                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
-                buildCustomAccordionDropdown(currentMainCat);
-
-                filterAds();
-                updateFavCount();
-
-                // Elanlar gəldi, trafiki hesablayırıq və animasiya TAM BİTƏndə spinneri gizlədirik
-                calculateAndUpdateTraffic(() => {
+                } else {
+                    isDataLoaded = true;
+                    clearTimeout(loadTimeout);
+                    filterAds();
                     const spinner = document.getElementById('trafficSpinner');
-                    if (spinner) {
-                        spinner.style.display = 'none';
-                    }
-                });
+                    if (spinner) spinner.style.display = 'none';
+                }
 
-            }, (error) => {
+            } catch (error) {
                 console.error("Firebase bağlantı xətası:", error);
                 showToast("Bağlantı qopdu, yenidən qoşulmağa çalışılır...", "error");
                 setTimeout(() => {
                     listenToAds();
                 }, 10000);
+                const spinner = document.getElementById('trafficSpinner');
+                if (spinner) spinner.style.display = 'none';
+            }
+        }
+
+        // Arxa fonda qalan elanları fasilə ilə çəkən funksiya
+        async function fetchRemainingAdsInBackground(lastDoc, batchSize) {
+            setTimeout(async () => {
+                try {
+                    const nextQuery = query(
+                        collection(db, "ads"), 
+                        startAfter(lastDoc), 
+                        limit(batchSize)
+                    );
+                    const snapshot = await getDocs(nextQuery);
+
+                    const spinner = document.getElementById('trafficSpinner');
+
+                    if (!snapshot.empty) {
+                        processSnapshotDocs(snapshot.docs);
+                        filterAds(); 
+                        updateTrafficSize();
+
+                        const newLastDoc = snapshot.docs[snapshot.docs.length - 1];
+                        
+                        // Əgər gələn elanların sayı batchSize-dan azdırsa, deməli SONUNCU hissədir -> SPİNNERİ İNDİ GİZLƏDİRİK!
+                        if (snapshot.docs.length < batchSize) {
+                            if (spinner) spinner.style.display = 'none';
+                        } else {
+                            // Hələ elanlar qalır, növbəti hissəni çəkməyə davam et
+                            fetchRemainingAdsInBackground(newLastDoc, batchSize);
+                        }
+                    } else {
+                        // Başqa elan qalmadı, spinneri gizlət
+                        if (spinner) spinner.style.display = 'none';
+                    }
+                } catch (err) {
+                    console.error("Arxa fonda növbəti elanların çəkilmə xətası:", err);
+                    const spinner = document.getElementById('trafficSpinner');
+                    if (spinner) spinner.style.display = 'none';
+                }
+            }, 1000); 
+        }
+
+        // Trafik həcmini hesablayıb ekranda yeniləyən köməkçi funksiya
+        function updateTrafficSize() {
+            let totalBytes = 0;
+            
+            if (performance && performance.getEntriesByType) {
+                const resources = performance.getEntriesByType('resource');
+                resources.forEach(res => {
+                    totalBytes += (res.decodedBodySize || res.transferSize || 0);
+                });
+            }
+            
+            if (performance.getEntriesByType('navigation')[0]) {
+                const nav = performance.getEntriesByType('navigation')[0];
+                totalBytes += (nav.decodedBodySize || nav.transferSize || 0);
+            }
+
+            if (typeof ads !== 'undefined' && ads.length > 0) {
+                try {
+                    totalBytes += new Blob([JSON.stringify(ads)]).size;
+                } catch(e) {}
+            }
+
+            const sizeEl = document.getElementById('topTrafficSize');
+            if (sizeEl && totalBytes > 0) {
+                let formattedSize = "";
+                if (totalBytes < 1024 * 1024) {
+                    formattedSize = (totalBytes / 1024).toFixed(1) + " KB";
+                } else if (totalBytes < 1024 * 1024 * 1024) {
+                    formattedSize = (totalBytes / (1024 * 1024)).toFixed(2) + " MB";
+                } else {
+                    formattedSize = (totalBytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+                }
+                sizeEl.innerText = formattedSize;
+            }
+        }
+
+        
+
+        // Gələn sənədləri ümumi massivə işləyən ortaq funksiya
+        function processSnapshotDocs(docs) {
+            const now = Date.now();
+            docs.forEach(docSnap => {
+                const data = docSnap.data();
+                let imgList = data.images;
+                if (!imgList || imgList.length === 0) {
+                    imgList = data.image ? [data.image] : ["https://images.unsplash.com/photo-1588702547919-26b89e033105?auto=format&fit=crop&w=600&q=80"];
+                }
+                const formattedPhone = cleanAndFormatPhone(data.phone);
+
+                let isVip = data.isVip;
+                if (isVip && data.vipExpiresAt && now > data.vipExpiresAt) {
+                    isVip = false;
+                    updateDoc(doc(db, "ads", docSnap.id), { isVip: false }).catch(e => console.error("VIP yenilənmə xətası:", e));
+                }
+
+                if (!ads.some(a => a.id === docSnap.id)) {
+                    ads.push({ id: docSnap.id, views: 0, ...data, isVip, phone: formattedPhone, images: imgList });
+                }
             });
+
+            const totalAdsEl = document.getElementById('totalAdsCount');
+            if (totalAdsEl) totalAdsEl.innerText = ads.length;
+            
+            const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+            buildCustomAccordionDropdown(currentMainCat);
+            updateFavCount();
         }
 
         function resizeAndConvertImage(file, quality) {
@@ -1165,7 +1265,7 @@
 
                     card.innerHTML = `
                         <div class="relative h-48 cursor-pointer bg-slate-100" onclick="openDetail('${ad.id}')">
-                            <img src="${mainImg}" class="w-full h-full object-cover">
+                            <img src="${mainImg}" loading="lazy" class="w-full h-full object-cover">
                             ${badgeHTML}
                             ${ad.images && ad.images.length > 1 ? '<span class="absolute top-3 ' + (badgeHTML ? 'left-20' : 'left-3') + ' bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-semibold"><i class="fa-solid fa-images"></i> ' + ad.images.length + '</span>' : ''}
                             
