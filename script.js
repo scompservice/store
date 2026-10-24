@@ -119,7 +119,6 @@
                 return;
             }
 
-            const oldValLower = oldValInput.toLowerCase();
             const targetName = type === 'category' ? 'əsas kateqoriyanı' : 'alt kateqoriyanı';
             
             if (!confirm(`Bütün elanlarda ${targetName} "${oldValInput}" adını "${newVal}" ilə əvəz etmək istədiyinizə əminsiniz?`)) {
@@ -127,6 +126,7 @@
             }
 
             try {
+                showToast("Miqrasiya icra olunur, gözləyin...", "info");
                 const querySnapshot = await getDocs(collection(db, "ads"));
                 let updatedCount = 0;
 
@@ -134,32 +134,58 @@
                     const data = docSnap.data();
                     
                     if (type === 'category' && data.category) {
-                        if (data.category.trim().toLowerCase() === oldValLower) {
+                        // Hərfbəhərf dəqiq uyğunluq (böyük-kiçik hərf fərqi nəzərə alınır)
+                        if (data.category.trim() === oldValInput) {
                             await updateDoc(doc(db, "ads", docSnap.id), { category: newVal });
+                            
+                            const localIndex = ads.findIndex(a => a.id === docSnap.id);
+                            if (localIndex > -1) ads[localIndex].category = newVal;
+
                             updatedCount++;
                         }
                     } else if (type === 'subCategory' && data.subCategory) {
-                        if (data.subCategory.toLowerCase().includes(oldValLower)) {
-                            const parts = data.subCategory.split('->');
-                            if (parts.length === 2) {
-                                let groupPart = parts[0].trim();
-                                let itemPart = parts[1].trim();
-                                
-                                if (groupPart.toLowerCase() === oldValLower) {
-                                    groupPart = newVal;
-                                } else if (itemPart.toLowerCase() === oldValLower) {
-                                    itemPart = newVal;
-                                }
+                        const parts = data.subCategory.split('->');
+                        
+                        if (parts.length === 2) {
+                            let groupPart = parts[0].trim();
+                            let itemPart = parts[1].trim();
+                            let isChanged = false;
+
+                            // Hərfbəhərf dəqiq uyğunluq yoxlaması
+                            if (groupPart === oldValInput) {
+                                groupPart = newVal;
+                                isChanged = true;
+                            }
+                            if (itemPart === oldValInput) {
+                                itemPart = newVal;
+                                isChanged = true;
+                            }
+
+                            if (isChanged) {
                                 const updatedSub = groupPart + " -> " + itemPart;
                                 await updateDoc(doc(db, "ads", docSnap.id), { subCategory: updatedSub });
+
+                                const localIndex = ads.findIndex(a => a.id === docSnap.id);
+                                if (localIndex > -1) ads[localIndex].subCategory = updatedSub;
+
                                 updatedCount++;
-                            } else {
+                            }
+                        } else {
+                            if (data.subCategory.trim() === oldValInput) {
                                 await updateDoc(doc(db, "ads", docSnap.id), { subCategory: newVal });
+
+                                const localIndex = ads.findIndex(a => a.id === docSnap.id);
+                                if (localIndex > -1) ads[localIndex].subCategory = newVal;
+
                                 updatedCount++;
                             }
                         }
                     }
                 }
+
+                filterAds();
+                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect'].value : '';
+                buildCustomAccordionDropdown(currentMainCat);
 
                 showToast(`${updatedCount} ədəd elan uğurla yeniləndi!`);
                 document.getElementById('oldCatInput').value = '';
