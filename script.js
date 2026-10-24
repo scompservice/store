@@ -1109,6 +1109,11 @@
                 }
                 
                 filterAds(); 
+                
+                // AKORDEON MENYUNU VƏ SAYLARI YENİLƏYİRİK:
+                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+                buildCustomAccordionDropdown(currentMainCat);
+
                 closeAddModal();
                 closeDetailModal();
             } catch (err) {
@@ -1139,6 +1144,10 @@
                     closeDetailModal();
                     showToast("Elan uğurla silindi.");
                     filterAds(); 
+                    
+                    // SİLİNDİKDƏ DƏ AKORDEON SAYLARINI YENİLƏYİRİK:
+                    const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
+                    buildCustomAccordionDropdown(currentMainCat);
                 } catch (err) { showToast("Silinmə xətası: " + err.message, 'error'); }
             }
         };
