@@ -389,19 +389,18 @@
                 // Varsayılan başlık seçeneğindeki py-2.5 değerini py-1.5 yaptık:
                 mainDropdownList.innerHTML = '<div onclick="selectMainCatOption(\'\', \'Kateqoriyalar\')" class="px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer transition">Bütün kateqoriyalar</div>';
                 
-                for (const catName of Object.keys(categoriesData)) {
-                    let mainOpt = document.createElement('option');
-                    mainOpt.value = catName;
-                    mainOpt.text = catName;
-                    mainSelect.appendChild(mainOpt);
+                for (const [catName, details] of Object.entries(categoriesData)) {
+					let mainOpt = document.createElement('option');
+					mainOpt.value = catName;
+					mainOpt.text = catName;
+					mainSelect.appendChild(mainOpt);
 
-                    let divItem = document.createElement('div');
-                    // Buradaki py-3 değerini py-1.5 (veya py-1) yaparak dikey mesafeyi daralttık:
-                    divItem.className = "px-4 py-1.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition";
-                    divItem.innerText = catName;
-                    divItem.onclick = () => selectMainCatOption(catName, catName);
-                    mainDropdownList.appendChild(divItem);
-                }
+					let divItem = document.createElement('div');
+					divItem.className = "px-4 py-1.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition flex items-center gap-2";
+					divItem.innerHTML = `<i class="fa-solid ${details.icon} w-4 text-slate-400"></i> <span>${catName}</span>`;
+					divItem.onclick = () => selectMainCatOption(catName, catName);
+					mainDropdownList.appendChild(divItem);
+				}
             }
 
             if (tabsContainer) {
