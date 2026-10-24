@@ -46,8 +46,9 @@
 					  "Video Cables, Adapters & Converters",
 					  "COM Port Adapters, Cables & Connectors",
 					  "Other Cables, Adapters & Connectors",
+					  "USB Bluetooth Adapters",
 					  "USB Hubs & Splitters",
-					  "USB Bluetooth Adapters"
+					  "KVM Switch"
 					],
 					"Yaddaş Qurğuları və Aksesuarları": [
 					  "HDD (Hard Disk Drive)",
