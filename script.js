@@ -1086,7 +1086,6 @@
                     }
                     await updateDoc(doc(db, "ads", editingId), adData);
                     
-                    // AĞILLI YENİLƏMƏ: Bütün siyahını yox, yalnız bu elanı massivdə yeniləyirik
                     const index = ads.findIndex(a => a.id === editingId);
                     if (index > -1) {
                         ads[index] = { ...ads[index], ...adData, phone: finalPhone, images: finalImages };
@@ -1097,13 +1096,18 @@
                     adData.views = 0;
                     const docRef = await addDoc(collection(db, "ads"), adData);
                     
-                    // Yeni elanı birbaşa massivin əvvəlinə əlavə edirik
                     ads.unshift({ id: docRef.id, ...adData, phone: finalPhone });
                     
+                    // Ümumi elanların sayını dərhal artırırıq
+                    const totalAdsEl = document.getElementById('totalAdsCount');
+                    if (totalAdsEl) {
+                        totalAdsEl.innerText = ads.length;
+                    }
+
                     showToast("Elan uğurla əlavə olundu!");
                 }
                 
-                filterAds(); // Ekranı dərhal yeniləyirik (meqabayt sayğacına toxunulmur!)
+                filterAds(); 
                 closeAddModal();
                 closeDetailModal();
             } catch (err) {
@@ -1123,12 +1127,17 @@
                 try {
                     await deleteDoc(doc(db, "ads", id));
                     
-                    // AĞILLI YENİLƏMƏ: Elanı massivdən dərhal silirik
                     ads = ads.filter(a => a.id !== id);
+                    
+                    // Ümumi elanların sayını dərhal azaldırıq
+                    const totalAdsEl = document.getElementById('totalAdsCount');
+                    if (totalAdsEl) {
+                        totalAdsEl.innerText = ads.length;
+                    }
                     
                     closeDetailModal();
                     showToast("Elan uğurla silindi.");
-                    filterAds(); // Ekranı dərhal yeniləyirik
+                    filterAds(); 
                 } catch (err) { showToast("Silinmə xətası: " + err.message, 'error'); }
             }
         };
