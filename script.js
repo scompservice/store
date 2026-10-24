@@ -184,7 +184,7 @@
                 }
 
                 filterAds();
-                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect'].value : '';
+                const currentMainCat = document.getElementById('mainCategorySelect') ? document.getElementById('mainCategorySelect').value : '';
                 buildCustomAccordionDropdown(currentMainCat);
 
                 showToast(`${updatedCount} ədəd elan uğurla yeniləndi!`);
