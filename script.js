@@ -1532,6 +1532,10 @@
                 document.getElementById('vipDurationContainer').classList.add('hidden');
                 document.querySelector('input[name="adCondition"][value="Yeni"]').checked = true;
                 
+                // MİQRASİYA PANELİNİ HƏR DƏFƏ BAĞLI VƏZİYYƏTƏ GƏTİRİRİK:
+                const migrationBox = document.getElementById('migrationContent');
+                if (migrationBox) migrationBox.classList.add('hidden');
+
                 // BURASI VACİBDİR: Yeni elan açılarkən köhnə şəkilləri tamamilə sıfırlayırıq
                 currentEditingImages = [];
                 window.originalFiles = []; 
