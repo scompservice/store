@@ -29,7 +29,7 @@
             "Ev və bağ üçün": {
                 icon: "fa-house",
                 sub: {
-                    "Təmir və tikinti": ["Uzadıcı və ötürücülər", "Elektrikli alətlər", "Əl alətləri", "Digər"],
+                    "Təmir və tikinti": ["Elektrik yuvası və aksesuarları", "Elektrikli alətlər", "Əl alətləri", "Digər"],
                     "Məişət texnikası": ["Tozsoranlar", "Digər"],
                     "Bağ və bostan": ["Qaz balonları", "Su üçün test cihazları", "Digər"],
                     "Ev təsərrüfatı malları": ["Digər"]
