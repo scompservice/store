@@ -22,7 +22,7 @@
                 icon: "fa-gem",
                 sub: {
                     "Saat və zinət əşyaları": ["Qol saatları", "Bijuteriya", "Digər"],
-                    "Aksesuarlar": ["Çantalar", "Saç aksesuarları", "Portmone və pul kisələri", "Digər"],
+                    "Aksesuarlar": ["Çantalar", "Portmone və pul kisələri", "Digər"],
                     "Sağlamlıq və gözəllik": ["Masaj aparatları", "Saç və saqqal baxımı üçün alətlər və aksesuarlar", "Digər"]
                 }
             },
