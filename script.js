@@ -1716,7 +1716,7 @@
 		});
 		
 		let isZoomed = false;
-		const scaleFactor = 2.5;
+		const scaleFactor = 4;
 
 		function resetImageZoom() {
 			isZoomed = false;
