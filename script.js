@@ -910,32 +910,31 @@
 
 		window.handleNewFiles = async function(input) {
 			if (input.files && input.files.length > 0) {
-				// Yeni seçilən faylları orijinal massivə əlavə edirik (və ya hamısını yeniləyirik)
-				for (let i = 0; i < input.files.length; i++) {
-					const file = input.files[i];
-					
-					// Eyni adların toqquşmaması üçün fayla unikal ad veririk, amma tipini qoruyuruq
-					const uniqueFile = new File([file], Date.now() + "_" + file.name, { type: file.type });
-					window.originalFiles.push(uniqueFile);
-				}
+				// Yalnız yeni seçilən şəkilləri emal edib mövcud şəkillərin SONUNA əlavə edirik.
+				// Köhnə Base64 şəkillərə toxunulmur və buna görə silinmirlər.
+				const selectedFiles = Array.from(input.files);
+				input.value = '';
 
-				await processAndRenderImages();
-				input.value = ''; 
+				await processAndRenderImages(selectedFiles);
 			}
 		};
 
-		async function processAndRenderImages() {
-			if (!window.originalFiles || window.originalFiles.length === 0) return;
-
+		async function processAndRenderImages(filesToAdd = null) {
 			const qualitySelect = document.getElementById('compressionQuality');
 			const quality = qualitySelect ? parseFloat(qualitySelect.value) : 0.75;
 
 			showToast("Şəkillər emal olunur...", "info");
-			currentEditingImages = []; // KöhnəBase64 massivini təmizləyirik
 
-			for (let i = 0; i < window.originalFiles.length; i++) {
-				const file = window.originalFiles[i];
+			// Yeni fayllar seçilibsə, onları mövcud şəkillərin ardınca əlavə et.
+			// Parametr verilməyibsə, keyfiyyət faizi dəyişib: yalnız yeni yüklənmiş
+			// faylları yenidən sıx, elandakı əvvəlki şəkilləri olduğu kimi saxla.
+			const files = filesToAdd
+				? filesToAdd.map(file => ({ file, isNew: true }))
+				: currentEditingImages
+					.filter(imgObj => imgObj.sourceFile)
+					.map(imgObj => ({ file: imgObj.sourceFile, isNew: false, image: imgObj }));
 
+			for (const item of files) {
 				try {
 					let finalBase64 = "";
 					if (quality === 1) {
@@ -943,21 +942,31 @@
 							const reader = new FileReader();
 							reader.onload = (e) => resolve(e.target.result);
 							reader.onerror = reject;
-							reader.readAsDataURL(file);
+							reader.readAsDataURL(item.file);
 						});
 					} else if (typeof resizeAndConvertImage === 'function') {
-						finalBase64 = await resizeAndConvertImage(file, quality);
+						finalBase64 = await resizeAndConvertImage(item.file, quality);
 					}
 
 					if (finalBase64) {
-						currentEditingImages.push({ src: finalBase64, rotation: 0 });
+						if (item.isNew) {
+							// Faylın özünü saxlayırıq ki, keyfiyyət dəyişəndə yenidən sıxıla bilsin.
+						currentEditingImages.push({
+							 src: finalBase64,
+							 rotation: 0,
+							 sourceFile: item.file
+							});
+						} else if (item.image) {
+							// Mövcud yeni şəkli yerində yenilə; siyahını təmizləmə.
+							item.image.src = finalBase64;
+						}
 					}
-				} catch(err) { 
+				} catch(err) {
 					console.error(err);
 					showToast("Şəkil emal edilərkən xəta baş verdi!", "error");
 				}
 			}
-			
+
 			renderEditingThumbnails();
 			showToast("Şəkillər yeniləndi!");
 		}
@@ -966,7 +975,7 @@
 			const qualitySelect = document.getElementById('compressionQuality');
 			if (qualitySelect) {
 				qualitySelect.addEventListener('change', async () => {
-					if (window.originalFiles && window.originalFiles.length > 0) {
+					if (currentEditingImages.some(imgObj => imgObj.sourceFile)) {
 						await processAndRenderImages();
 					}
 				});
@@ -1017,7 +1026,6 @@
         window.removeEditingImage = function(index) {
             currentEditingImages.splice(index, 1);
             renderEditingThumbnails();
-			window.originalFiles.splice(index, 1);
         };
 
         window.rotateEditingImageLeft = function(index) {
@@ -1109,6 +1117,13 @@
             };
 
             try {
+                // Firestore sənəd limiti: şəkillər və digər elan məlumatları birlikdə 1 MiB-dan çox olmamalıdır.
+                const documentSizeBytes = new Blob([JSON.stringify(adData)]).size;
+                if (documentSizeBytes > 1024 * 1024) {
+                    showToast("Elanın ümumi həcmi 1 MB limitini keçir. Şəkillərin keyfiyyət faizini azaldın.", "error");
+                    return;
+                }
+
                 if (editingId) {
                     delete adData.createdAt; 
                     if (!isVipChecked) {
@@ -1214,6 +1229,7 @@
             document.getElementById('adDescription').value = ad.description;
             document.getElementById('modalTitleText').innerText = "Elana Düzəliş Et (Admin)";
 
+            window.originalFiles = [];
             currentEditingImages = (ad.images || []).map(src => ({ src: src, rotation: 0 }));
             renderEditingThumbnails();
 
@@ -1541,7 +1557,7 @@
 
                 // BURASI VACİBDİR: Yeni elan açılarkən köhnə şəkilləri tamamilə sıfırlayırıq
                 currentEditingImages = [];
-                window.originalFiles = []; 
+                window.originalFiles = [];
                 renderEditingThumbnails();
             }
             document.getElementById('addModal').classList.remove('hidden');
@@ -1550,6 +1566,7 @@
         window.closeAddModal = () => {
             document.getElementById('editingAdId').value = '';
             currentEditingImages = [];
+            window.originalFiles = [];
             document.getElementById('addModal').classList.add('hidden');
         };
 
