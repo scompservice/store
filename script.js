@@ -1650,16 +1650,29 @@
             filterAds();
         };
 
-        function checkUrlForAd() {
+        async function checkUrlForAd() {
             const urlParams = new URLSearchParams(window.location.search);
             const adId = urlParams.get('id');
-            if (adId) {
-                const timer = setInterval(() => {
-                    if (ads.length > 0) {
-                        clearInterval(timer);
-                        openDetail(adId);
-                    }
-                }, 200);
+
+            if (!adId) return;
+
+            try {
+                // Elanı siyahıdan deyil, birbaşa Firebase-dən ID ilə tapırıq
+                const adRef = doc(db, "ads", adId);
+                const adSnap = await getDoc(adRef);
+
+                if (adSnap.exists()) {
+                    // Elan ads massivində yoxdursa, ora əlavə edirik
+                    processSnapshotDocs([adSnap]);
+
+                    // Elanın səhifəsini açırıq
+                    openDetail(adId);
+                } else {
+                    showToast("Bu elan tapılmadı və ya silinib.", "error");
+                }
+            } catch (error) {
+                console.error("Elan linki açılarkən xəta:", error);
+                showToast("Elanı açmaq mümkün olmadı. Yenidən yoxlayın.", "error");
             }
         }
 
