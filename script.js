@@ -97,6 +97,8 @@
         let favorites = JSON.parse(localStorage.getItem('sumqayit_favs')) || [];
         let currentCategoryTab = '';
         let currentUser = null;
+        const ADMIN_EMAIL = 'scomprepairservice@gmail.com';
+        const isAdmin = () => !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL);
         let currentEditingImages = []; 
 
         let activeFullscreenImages = [];
@@ -104,7 +106,7 @@
         let selectedSubCategoryValue = '';
 
         window.runAdminMigration = async function() {
-            if (!currentUser) {
+            if (!isAdmin()) {
                 showToast("Bunun üçün admin olmalısınız!", "error");
                 return;
             }
@@ -574,12 +576,30 @@
             }
         };
 
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
+        onAuthStateChanged(auth, async (user) => {
+            const authorizedAdmin = !!(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL);
+            currentUser = authorizedAdmin ? user : null;
+
             const authSection = document.getElementById('authSection');
             const addAdBtnContainer = document.getElementById('addAdBtnContainer');
 
-            if (user) {
+            if (user && !authorizedAdmin) {
+                if (addAdBtnContainer) addAdBtnContainer.innerHTML = '';
+                if (authSection) {
+                    authSection.innerHTML = `
+                        <button onclick="loginWithGoogle()" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 transition flex items-center space-x-2 text-xs font-semibold" title="Google ilə Admin Girişi">
+                            <i class="fa-brands fa-google text-red-500"></i>
+                            <span class="hidden sm:inline">Admin Girişi</span>
+                        </button>
+                    `;
+                }
+                try { await signOut(auth); } catch (error) { console.error("İcazəsiz hesabdan çıxış xətası:", error); }
+                showToast("Bu Gmail hesabına admin icazəsi verilməyib.", "error");
+                filterAds();
+                return;
+            }
+
+            if (authorizedAdmin) {
                 if (addAdBtnContainer) {
                     addAdBtnContainer.innerHTML = `
                         <button onclick="openAddModal()" class="bg-primary hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-semibold shadow-lg shadow-primary/25 flex items-center space-x-2 transition transform active:scale-95 text-sm">
@@ -614,8 +634,14 @@
 
         window.loginWithGoogle = async function() {
             try {
-                await signInWithPopup(auth, provider);
-                showToast("Uğurla admin olaraq daxil olundunuz!");
+                const result = await signInWithPopup(auth, provider);
+                const signedInEmail = result.user && result.user.email ? result.user.email.toLowerCase() : '';
+                if (signedInEmail !== ADMIN_EMAIL) {
+                    await signOut(auth);
+                    showToast("Giriş rədd edildi. Yalnız icazəli admin Gmail hesabı daxil ola bilər.", "error");
+                    return;
+                }
+                showToast("Admin hesabına uğurla daxil oldunuz!");
             } catch (error) {
                 showToast("Giriş xətası: " + error.message, 'error');
             }
@@ -1062,7 +1088,7 @@
 
         window.submitAd = async function(e) {
             e.preventDefault();
-            if (!currentUser) {
+            if (!isAdmin()) {
                 showToast("Bu əməliyyat üçün admin kimi daxil olmalısınız!", 'error');
                 return;
             }
@@ -1169,7 +1195,7 @@
         };
 		
 		window.deleteAd = async function(id) {
-            if (!currentUser) {
+            if (!isAdmin()) {
                 showToast("Bu əməliyyat üçün admin kimi daxil olmalısınız!", 'error');
                 return;
             }
@@ -1323,7 +1349,7 @@
                     }
 
                     let adminVipWarningHTML = '';
-                    if (currentUser && ad.isVip && ad.vipExpiresAt) {
+                    if (isAdmin() && ad.isVip && ad.vipExpiresAt) {
                         const timeLeft = ad.vipExpiresAt - Date.now();
                         const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
                         if (timeLeft > 0 && daysLeft <= 3) {
@@ -1512,7 +1538,7 @@
                             <span>WhatsApp-a Yaz</span>
                         </a>
                     </div>
-                    ${currentUser ? `
+                    ${isAdmin() ? `
                         <div class="flex items-center space-x-2">
                             <button onclick="editAd('${ad.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-3 rounded-xl font-semibold text-sm transition flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square"></i> Düzəliş et</button>
                             <button onclick="deleteAd('${ad.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-3 rounded-xl font-semibold text-sm transition" title="Elanı sil"><i class="fa-solid fa-trash"></i></button>
