@@ -912,7 +912,11 @@
 			if (input.files && input.files.length > 0) {
 				// Yeni seçilən faylları orijinal massivə əlavə edirik (və ya hamısını yeniləyirik)
 				for (let i = 0; i < input.files.length; i++) {
-					window.originalFiles.push(input.files[i]);
+					const file = input.files[i];
+					
+					// Eyni adların toqquşmaması üçün fayla unikal ad veririk, amma tipini qoruyuruq
+					const uniqueFile = new File([file], Date.now() + "_" + file.name, { type: file.type });
+					window.originalFiles.push(uniqueFile);
 				}
 
 				await processAndRenderImages();
