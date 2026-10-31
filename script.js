@@ -1355,7 +1355,7 @@
                                 ${condition}
                             </span>
 
-                            <div class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
+                            <div id="view-count-${ad.id}" class="absolute bottom-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
                                 <i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views || 0} baxış
                             </div>
                             <button onclick="event.stopPropagation(); toggleFavorite('${ad.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-700 hover:text-rose-500 transition">
@@ -1423,6 +1423,12 @@
                 const adRef = doc(db, "ads", id);
                 await updateDoc(adRef, { views: increment(1) });
                 ad.views = (ad.views || 0) + 1;
+
+                // Elan bağlanmadan siyahı kartındakı baxış sayını da dərhal yenilə
+                const cardViewsEl = document.getElementById(`view-count-${id}`);
+                if (cardViewsEl) {
+                    cardViewsEl.innerHTML = `<i class="fa-solid fa-eye text-emerald-400"></i> ${ad.views} baxış`;
+                }
             } catch (err) { console.error("View count update error:", err); }
 
             const displayPhone = ad.phone || "+994 50 545 85 86";
