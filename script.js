@@ -1,5 +1,5 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot, query, limit, startAfter } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, increment, setDoc, onSnapshot, query, limit, startAfter, Timestamp, where } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 		import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -675,28 +675,86 @@
                 const viewsEl = document.getElementById('totalViewsCount');
                 if (viewsEl) viewsEl.innerText = updatedStats.exists() ? (updatedStats.data().totalViews || 1) : 1;
 
-                const sessionId = 'user_' + Math.random().toString(36).substring(2, 9);
-                const userPresenceRef = doc(db, "active_sessions", sessionId);
-                await setDoc(userPresenceRef, { lastSeen: Date.now() });
+                // Aktiv istifadəçi üçün sabit sessiya ID-si
+				let sessionId = sessionStorage.getItem('sumqayit_session_id');
 
-                setInterval(async () => {
-                    try {
-                        await updateDoc(userPresenceRef, { lastSeen: Date.now() });
-                    } catch(e) {
-                        await setDoc(userPresenceRef, { lastSeen: Date.now() });
-                    }
-                }, 10000);
+				if (!sessionId) {
+					sessionId = 'user_' + (
+						window.crypto && crypto.randomUUID
+							? crypto.randomUUID()
+							: Math.random().toString(36).substring(2, 15)
+					);
 
-                onSnapshot(collection(db, "active_sessions"), (snapshot) => {
-                    const now = Date.now();
-                    let activeCount = 0;
-                    snapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        if (now - data.lastSeen < 25000) activeCount++;
-                    });
-                    const activeEl = document.getElementById('activeUsersCount');
-                    if (activeEl) activeEl.innerText = Math.max(1, activeCount);
-                });
+					sessionStorage.setItem('sumqayit_session_id', sessionId);
+				}
+
+				const userPresenceRef = doc(db, "active_sessions", sessionId);
+
+				// Sessiyanı yeniləmək
+				async function updateUserPresence() {
+					const now = Date.now();
+
+					await setDoc(userPresenceRef, {
+						lastSeen: now,
+						expiresAt: Timestamp.fromMillis(now + 60000)
+					}, { merge: true });
+				}
+
+				// İlk qeydiyyat
+				await updateUserPresence();
+
+				// Hər 20 saniyədən bir yenilə
+				setInterval(async () => {
+					try {
+						await updateUserPresence();
+					} catch (e) {
+						console.error("Aktiv sessiya yenilənmə xətası:", e);
+					}
+				}, 20000);
+
+				// Vaxtı bitmiş sessiyaları saymamaq
+				const activeSessionsQuery = query(
+					collection(db, "active_sessions"),
+					where("expiresAt", ">", Timestamp.now())
+				);
+
+				let activeSessionsSnapshot = null;
+
+				function updateActiveUsersCount() {
+					if (!activeSessionsSnapshot) return;
+
+					const now = Date.now();
+					let activeCount = 0;
+
+					activeSessionsSnapshot.forEach(docSnap => {
+						const data = docSnap.data();
+
+						if (
+							typeof data.lastSeen === "number" &&
+							data.expiresAt &&
+							data.expiresAt.toMillis() > now &&
+							now - data.lastSeen < 45000
+						) {
+							activeCount++;
+						}
+					});
+
+					const activeEl = document.getElementById('activeUsersCount');
+
+					if (activeEl) {
+						activeEl.innerText = activeCount;
+					}
+				}
+
+				onSnapshot(activeSessionsQuery, (snapshot) => {
+					activeSessionsSnapshot = snapshot;
+					updateActiveUsersCount();
+				}, (error) => {
+					console.error("Aktiv istifadəçilər statistikası xətası:", error);
+				});
+
+				// Sessiyaların vaxtı keçdikcə sayını yenilə
+				setInterval(updateActiveUsersCount, 10000);
             } catch (e) {
                 console.error("Stats error:", e);
             }
