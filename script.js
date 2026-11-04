@@ -38,7 +38,7 @@
             "Elektronika": {
                 icon: "fa-laptop",
                 sub: {
-                    "Audio və video": ["Audio aksesuarlar", "Mikrofonlar", "Qulaqlıqlar", "Digər"],
+                    "Audio və video": ["Audio aksesuarlar", "Dinamiklər və portativ səsgücləndiricilər", "Mikrofonlar", "Qulaqlıqlar", "Digər"],
                     "Kompüter aksesuarları": [
 					  "Laptop Adapters & Power Supplies",
 					  "Klaviaturalar və kompüter siçanları",
