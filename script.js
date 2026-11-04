@@ -65,7 +65,7 @@
 					  "Storage Accessories"
 					],
 					"Oyunlar, pultlar və proqramlar": ["Proqramlar", "Portativ elektron oyun cihazları", "Oyun pultları və aksesuarları"],
-                    "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları", "Video kartlar", "Digər"],
+                    "Komponentlər və monitorlar": ["Ana plataları", "Batareyalar", "CD, DVD və Blu-ray", "Keyslər və korpuslar", "Kulerlər və ventilyatorlar", "Monitorlar və ekranlar", "Operativ yaddaş (RAM)", "Prosessorlar (CPU)", "Qida blokları (PSU)", "Video kartlar", "Digər"],
                     "Noutbuklar və netbuklar": ["Noutbuklar üçün aksesuarlar", "Noutbuklar üçün ehtiyyat hissələri", "Noutbuk üçün korpuslar"],
                     "Ofis avadanlığı və istehlak materialları": ["İstehlak və aksesuarlar", "Zəmanət və servis etiketləri", "Digər"],
 					"Smart saat ve qolbaqlar": ["Smart saatlar", "Fitnes qolbaqları", "Aksesuarlar"],
