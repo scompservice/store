@@ -49,7 +49,7 @@
 					  "USB Bluetooth Adapters",
 					  "USB Hubs & Splitters",
 					  "KVM Switch",
-					  "Thermal Pads & Pastes"
+					  "Thermal Pads, Pastes & Tapes"
 					],
 					"Yaddaş Qurğuları və Aksesuarları": [
 					  "HDD (Hard Disk Drive)",
